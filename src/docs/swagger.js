@@ -1,16 +1,23 @@
-// src/docs/swagger.js
-const express = require('express');
-const swaggerUi = require('swagger-ui-express');
-const YAML = require('yamljs');
-const path = require('path');
+const swaggerJsdoc = require("swagger-jsdoc");
 
-const router = express.Router();
+const options = {
+  definition: {
+    openapi: "3.0.0",
+    info: {
+      title: "NGO Management API",
+      version: "1.0.0",
+      description: "API documentation for NGO backend",
+    },
+    servers: [
+      {
+        url: process.env.RENDER_EXTERNAL_URL || "http://localhost:4000",
+      },
+    ],
+  },
 
-// load YAML (openapi.yaml should be at repo root)
-const specPath = path.resolve(__dirname, '../../openapi.yaml');
-const swaggerDocument = YAML.load(specPath);
+  apis: ["./src/routes/*.js"], // <– all route files
+};
 
-router.use('/', swaggerUi.serve);
-router.get('/', swaggerUi.setup(swaggerDocument, { explorer: true }));
+const swaggerSpec = swaggerJsdoc(options);
 
-module.exports = router;
+module.exports = swaggerSpec;

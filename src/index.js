@@ -14,6 +14,12 @@ app.use(cors());
 app.use(helmet());
 app.use(morgan('dev'));
 
+const swaggerUi = require("swagger-ui-express");
+const swaggerSpec = require("./docs/swagger");
+
+app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+
 // ------------------------------
 // HEALTH CHECK ROUTES
 // ------------------------------
@@ -86,3 +92,5 @@ app.listen(config.PORT, () => {
 });
 
 module.exports = app;
+
+

@@ -1,3 +1,11 @@
+/**
+ * @swagger
+ * tags:
+ *   name: Auth
+ *   description: Authentication routes
+ */
+
+
 // src/routes/auth.js
 
 const express = require('express');
@@ -9,6 +17,28 @@ const authController = require('../controllers/authController');
 
 // Register Super Admin (FIRST account only, or protected manually)
 router.post('/register-super-admin', authController.registerSuperAdmin);
+
+/**
+ * @swagger
+ * /auth/login:
+ *   post:
+ *     summary: Login user
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Login success
+ */
 
 // Login — returns access + refresh token
 router.post('/login', authController.login);
