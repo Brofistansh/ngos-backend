@@ -94,7 +94,7 @@ app.listen(config.PORT, () => {
 module.exports = app;
 
 
-const apiKeyMiddleware = require('./middleware/apiKeyMiddleware');
+const apiKeyMiddleware = require('./middlewares/apiKeyMiddleware');
 
 // apply globally to all routes
 app.use(apiKeyMiddleware);
