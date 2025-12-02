@@ -4,31 +4,44 @@ info:
   version: "1.0.0"
   description: |
     Full OpenAPI 3.1 specification for the NGOs backend.
-    Includes Auth (access + refresh + password reset), NGOs, Centers,
-    Users, Attendance, Students, Donations, Reports and role rules.
+    Includes Auth, NGOs, Centers, Users, Attendance, Students,
+    Donations, Reports, role rules, and x-api-key security.
+
 servers:
   - url: http://localhost:4000
     description: Local dev
   - url: https://ngos-backend.onrender.com
     description: Production (Render)
+
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
+
+    xApiKey:
+      type: apiKey
+      in: header
+      name: x-api-key
+
   schemas:
     Error:
       type: object
       properties:
         message:
           type: string
+
     AuthLoginRequest:
       type: object
       required: [email, password]
       properties:
-        email: { type: string, format: email }
-        password: { type: string }
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
     AuthLoginResponse:
       type: object
       properties:
@@ -36,21 +49,25 @@ components:
         token: { type: string }
         access_token: { type: string }
         refresh_token: { type: string }
+
     RefreshRequest:
       type: object
       required: [refresh_token]
       properties:
         refresh_token: { type: string }
+
     RefreshResponse:
       type: object
       properties:
         access_token: { type: string }
         refresh_token: { type: string }
+
     RequestPasswordReset:
       type: object
       required: [email]
       properties:
         email: { type: string }
+
     ResetPassword:
       type: object
       required: [uid, token, new_password]
@@ -58,6 +75,7 @@ components:
         uid: { type: string, format: uuid }
         token: { type: string }
         new_password: { type: string }
+
     NGO:
       type: object
       properties:
@@ -67,13 +85,15 @@ components:
         contact_email: { type: string, format: email }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
+
     CreateNGO:
       type: object
       required: [name, registration_number, contact_email]
       properties:
         name: { type: string }
         registration_number: { type: string }
-        contact_email: { type: string, format: email }
+        contact_email: { type: string }
+
     Center:
       type: object
       properties:
@@ -83,6 +103,7 @@ components:
         contact_phone: { type: string }
         timezone: { type: string }
         createdAt: { type: string, format: date-time }
+
     CreateCenter:
       type: object
       required: [name, contact_phone, timezone]
@@ -90,6 +111,7 @@ components:
         name: { type: string }
         contact_phone: { type: string }
         timezone: { type: string }
+
     User:
       type: object
       properties:
@@ -99,6 +121,7 @@ components:
         role: { type: string }
         ngo_id: { type: string, nullable: true }
         center_id: { type: string, nullable: true }
+
     CreateUser:
       type: object
       required: [name, email, password, role]
@@ -108,21 +131,33 @@ components:
         password: { type: string }
         role:
           type: string
-          enum: [super_admin, ngo_admin, ngo_manager, center_manager, teacher, donor_analyst, teacher_assistant, teacher_volunteer, teacher_intern, teacher_substitute]
+          enum:
+            - super_admin
+            - ngo_admin
+            - ngo_manager
+            - center_manager
+            - teacher
+            - donor_analyst
+            - teacher_assistant
+            - teacher_volunteer
+            - teacher_intern
+            - teacher_substitute
         ngo_id: { type: string }
         center_id: { type: string }
+
     AttendanceMark:
       type: object
       required: [user_id, status]
       properties:
-        user_id: { type: string, format: uuid }
+        user_id: { type: string }
         status:
           type: string
           enum: [present, absent, late, excused]
+
     Student:
       type: object
       properties:
-        id: { type: string, format: uuid }
+        id: { type: string }
         name: { type: string }
         age: { type: integer }
         gender: { type: string }
@@ -130,6 +165,7 @@ components:
         ngo_id: { type: string }
         center_id: { type: string }
         assigned_teacher_id: { type: string }
+
     CreateStudent:
       type: object
       required: [name, age, gender, ngo_id, center_id]
@@ -140,6 +176,7 @@ components:
         ngo_id: { type: string }
         center_id: { type: string }
         assigned_teacher_id: { type: string }
+
     StudentAttendanceMark:
       type: object
       required: [student_id, status]
@@ -148,17 +185,19 @@ components:
         status:
           type: string
           enum: [present, absent, late, excused]
+
     Donor:
       type: object
       properties:
-        id: { type: string, format: uuid }
+        id: { type: string }
         name: { type: string }
         email: { type: string }
         phone: { type: string }
         address: { type: string }
         notes: { type: string }
         ngo_id: { type: string }
-        createdAt: { type: string, format: date-time }
+        createdAt: { type: string }
+
     CreateDonor:
       type: object
       required: [name]
@@ -168,21 +207,23 @@ components:
         phone: { type: string }
         address: { type: string }
         notes: { type: string }
+
     Donation:
       type: object
       properties:
-        id: { type: string, format: uuid }
+        id: { type: string }
         donor_id: { type: string }
         ngo_id: { type: string }
         center_id: { type: string }
-        amount: { type: number, format: float }
+        amount: { type: number }
         currency: { type: string }
-        date: { type: string, format: date }
+        date: { type: string }
         method: { type: string }
         purpose: { type: string }
         receipt_number: { type: string }
         status: { type: string }
-        createdAt: { type: string, format: date-time }
+        createdAt: { type: string }
+
     CreateDonation:
       type: object
       required: [donor_id, amount, currency, date, method]
@@ -192,9 +233,10 @@ components:
         center_id: { type: string }
         amount: { type: number }
         currency: { type: string }
-        date: { type: string, format: date }
+        date: { type: string }
         method: { type: string }
         purpose: { type: string }
+
     ReportDailySummary:
       type: object
       properties:
@@ -204,11 +246,14 @@ components:
           type: object
         students:
           type: object
-    # Add more report schemas as needed...
+
 paths:
+
   /:
     get:
-      summary: Root - health check message
+      summary: Root - health message
+      security:
+        - xApiKey: []  # no JWT needed
       responses:
         "200":
           description: OK
@@ -216,23 +261,22 @@ paths:
             text/plain:
               schema:
                 type: string
+
   /health:
     get:
       summary: Health check
+      security:
+        - xApiKey: []
       responses:
         "200":
-          description: status ok
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status: { type: string }
-                  time: { type: string }
+          description: ok
+
   /auth/login:
     post:
-      summary: Login (returns access and refresh tokens)
       tags: [Auth]
+      summary: Login user
+      security:
+        - xApiKey: []
       requestBody:
         required: true
         content:
@@ -246,18 +290,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AuthLoginResponse'
-        "400":
-          description: Invalid credentials
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-      x-role-rules: |
-        Allowed roles to create users: Only existing super_admin/ngo_admin can create roles; login endpoint is public.
+
   /auth/refresh:
     post:
-      summary: Exchange refresh token for a new access token (rotation)
       tags: [Auth]
+      summary: Refresh JWT using refresh token
+      security:
+        - xApiKey: []
       requestBody:
         required: true
         content:
@@ -266,17 +305,18 @@ paths:
               $ref: '#/components/schemas/RefreshRequest'
       responses:
         "200":
-          description: New tokens
+          description: Success
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/RefreshResponse'
-        "401":
-          description: Invalid or expired refresh token
+
   /auth/request-password-reset:
     post:
-      summary: Request password reset (sends email via configured provider)
       tags: [Auth]
+      summary: Send password reset email
+      security:
+        - xApiKey: []
       requestBody:
         required: true
         content:
@@ -285,11 +325,14 @@ paths:
               $ref: '#/components/schemas/RequestPasswordReset'
       responses:
         "200":
-          description: Generic success (do not reveal account existence)
+          description: Sent
+
   /auth/reset-password:
     post:
-      summary: Reset password using reset token
       tags: [Auth]
+      summary: Reset password
+      security:
+        - xApiKey: []
       requestBody:
         required: true
         content:
@@ -298,15 +341,15 @@ paths:
               $ref: '#/components/schemas/ResetPassword'
       responses:
         "200":
-          description: Password reset success
-        "400":
-          description: Invalid token or missing fields
+          description: Reset OK
+
   /ngos:
     post:
-      summary: Create a new NGO
       tags: [NGOs]
+      summary: Create NGO
       security:
         - bearerAuth: []
+        - xApiKey: []
       requestBody:
         required: true
         content:
@@ -316,27 +359,18 @@ paths:
       responses:
         "200":
           description: NGO created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/NGO'
-        "401":
-          description: Unauthorized
-      x-role-rules: |
-        Allowed roles: super_admin, ngo_admin.
-        If a user is super_admin they can create NGO; ngo_admin can only create sub-resources within their NGO.
+
   /ngos/{ngoId}/centers:
     post:
-      summary: Create a center under an NGO
       tags: [Centers]
+      summary: Create a center
       security:
         - bearerAuth: []
+        - xApiKey: []
       parameters:
         - name: ngoId
           in: path
           required: true
-          schema:
-            type: string
       requestBody:
         required: true
         content:
@@ -346,18 +380,14 @@ paths:
       responses:
         "200":
           description: Center created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Center'
-      x-role-rules: |
-        Allowed roles: ngo_admin, ngo_manager, super_admin. ngo_admin can create centers for their NGO.
+
   /users:
     post:
-      summary: Create a user (role-based)
       tags: [Users]
+      summary: Create new user
       security:
         - bearerAuth: []
+        - xApiKey: []
       requestBody:
         required: true
         content:
@@ -367,24 +397,14 @@ paths:
       responses:
         "200":
           description: User created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-        "400":
-          description: Bad request
-      x-role-rules: |
-        Role creation rules:
-          - super_admin: can create any role and attach to any NGO/center.
-          - ngo_admin: can create ngo_manager, center_manager, teacher roles but only within their NGO.
-          - ngo_manager: can create center_manager and teacher under centers they manage.
-          - center_manager: can create teacher and teacher_assistant for their center.
+
   /attendance/mark:
     post:
-      summary: Mark staff attendance (by manager)
       tags: [Attendance]
+      summary: Mark staff attendance
       security:
         - bearerAuth: []
+        - xApiKey: []
       requestBody:
         required: true
         content:
@@ -393,51 +413,15 @@ paths:
               $ref: '#/components/schemas/AttendanceMark'
       responses:
         "200":
-          description: Attendance marked
-      x-role-rules: |
-        Allowed roles: center_manager, ngo_manager, ngo_admin, super_admin
-  /attendance/center/{centerId}:
-    get:
-      summary: Get attendance records for a center (daily)
-      tags: [Attendance]
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: centerId
-          in: path
-          required: true
-          schema: { type: string }
-        - name: date
-          in: query
-          required: false
-          schema: { type: string, format: date }
-      responses:
-        "200":
-          description: List of attendance records
-  /attendance/ngo/{ngoId}:
-    get:
-      summary: Get attendance across an NGO (daily)
-      tags: [Attendance]
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: ngoId
-          in: path
-          required: true
-          schema: { type: string }
-        - name: date
-          in: query
-          required: false
-          schema: { type: string, format: date }
-      responses:
-        "200":
-          description: Attendance list aggregated by centers
+          description: Marked
+
   /student-attendance/mark:
     post:
-      summary: Mark a student's attendance
       tags: [Student Attendance]
+      summary: Mark student attendance
       security:
         - bearerAuth: []
+        - xApiKey: []
       requestBody:
         required: true
         content:
@@ -446,15 +430,15 @@ paths:
               $ref: '#/components/schemas/StudentAttendanceMark'
       responses:
         "200":
-          description: Student attendance marked
-      x-role-rules: |
-        Allowed roles: center_manager, teacher, ngo_manager
+          description: Marked
+
   /students:
     post:
-      summary: Create a student
       tags: [Students]
+      summary: Create student
       security:
         - bearerAuth: []
+        - xApiKey: []
       requestBody:
         required: true
         content:
@@ -464,32 +448,14 @@ paths:
       responses:
         "200":
           description: Student created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Student'
-      x-role-rules: |
-        Allowed roles: center_manager, ngo_admin, super_admin
-  /students/center/{centerId}:
-    get:
-      summary: List students in a center
-      tags: [Students]
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: centerId
-          in: path
-          required: true
-          schema: { type: string }
-      responses:
-        "200":
-          description: array of students
+
   /donors:
     post:
-      summary: Create donor record
       tags: [Donations]
+      summary: Create donor
       security:
         - bearerAuth: []
+        - xApiKey: []
       requestBody:
         content:
           application/json:
@@ -498,18 +464,14 @@ paths:
       responses:
         "200":
           description: Donor created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Donor'
-      x-role-rules: |
-        Allowed roles: ngo_admin, ngo_manager, super_admin, donor_analyst
+
   /donations:
     post:
-      summary: Record donation (receipt generation)
       tags: [Donations]
+      summary: Record donation
       security:
         - bearerAuth: []
+        - xApiKey: []
       requestBody:
         required: true
         content:
@@ -519,244 +481,3 @@ paths:
       responses:
         "200":
           description: Donation recorded
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Donation'
-      x-role-rules: |
-        Allowed roles: center_manager (for branch), ngo_admin, ngo_manager, super_admin.
-  /donations/{donationId}:
-    get:
-      summary: Get donation by ID
-      tags: [Donations]
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: donationId
-          in: path
-          required: true
-          schema: { type: string }
-      responses:
-        "200":
-          description: Donation object
-  /donations:
-    get:
-      summary: List donations with filters
-      tags: [Donations]
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: ngo_id
-          in: query
-          schema: { type: string }
-        - name: center_id
-          in: query
-          schema: { type: string }
-        - name: from
-          in: query
-          schema: { type: string, format: date }
-        - name: to
-          in: query
-          schema: { type: string, format: date }
-        - name: q
-          in: query
-          schema: { type: string }
-      responses:
-        "200":
-          description: Array of donations
-  /reports/center/{centerId}/daily-summary:
-    get:
-      summary: Daily attendance + donations summary for a center
-      tags: [Reports]
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: centerId
-          in: path
-          required: true
-          schema: { type: string }
-        - name: date
-          in: query
-          schema: { type: string, format: date }
-      responses:
-        "200":
-          description: Summary object
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReportDailySummary'
-      x-role-rules: |
-        Allowed roles: center_manager, ngo_admin, donor_analyst, super_admin.
-  /reports/center/{centerId}/monthly/teachers:
-    get:
-      summary: Monthly teacher attendance report for a center
-      tags: [Reports]
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: centerId
-          in: path
-          required: true
-          schema: { type: string }
-        - name: year
-          in: query
-          required: true
-          schema: { type: integer }
-        - name: month
-          in: query
-          required: true
-          schema: { type: integer }
-      responses:
-        "200":
-          description: Monthly breakdown
-  /reports/ngo/{ngoId}/monthly/teachers:
-    get:
-      summary: Monthly teacher attendance report across NGO
-      tags: [Reports]
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: ngoId
-          in: path
-          required: true
-          schema: { type: string }
-        - name: year
-          in: query
-          required: true
-          schema: { type: integer }
-        - name: month
-          in: query
-          required: true
-          schema: { type: integer }
-      responses:
-        "200":
-          description: Monthly ngowide breakdown
-  /reports/user/{userId}/monthly:
-    get:
-      summary: Monthly attendance report for a user
-      tags: [Reports]
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: userId
-          in: path
-          required: true
-          schema: { type: string }
-        - name: year
-          in: query
-          required: true
-          schema: { type: integer }
-        - name: month
-          in: query
-          required: true
-          schema: { type: integer }
-      responses:
-        "200":
-          description: per-user monthly report
-  /reports/student/{studentId}/monthly:
-    get:
-      summary: Monthly attendance report for a student
-      tags: [Reports]
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: studentId
-          in: path
-          required: true
-          schema: { type: string }
-        - name: year
-          in: query
-          required: true
-          schema: { type: integer }
-        - name: month
-          in: query
-          required: true
-          schema: { type: integer }
-      responses:
-        "200":
-          description: per-student monthly report
-  /reports/donations/center/{centerId}/monthly:
-    get:
-      summary: Center donation report (monthly)
-      tags: [Reports, Donations]
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: centerId
-          in: path
-          required: true
-          schema: { type: string }
-        - name: year
-          in: query
-          required: true
-          schema: { type: integer }
-        - name: month
-          in: query
-          required: true
-          schema: { type: integer }
-      responses:
-        "200":
-          description: center donation summary
-  /reports/donations/ngo/{ngoId}/monthly:
-    get:
-      summary: NGO donation report (monthly)
-      tags: [Reports, Donations]
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: ngoId
-          in: path
-          required: true
-          schema: { type: string }
-        - name: year
-          in: query
-          required: true
-          schema: { type: integer }
-        - name: month
-          in: query
-          required: true
-          schema: { type: integer }
-      responses:
-        "200":
-          description: ngo donation summary
-  /reports/donations/donor/{donorId}/monthly:
-    get:
-      summary: Donor-specific donation history (monthly)
-      tags: [Reports, Donations]
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: donorId
-          in: path
-          required: true
-          schema: { type: string }
-        - name: year
-          in: query
-          required: true
-          schema: { type: integer }
-        - name: month
-          in: query
-          required: true
-          schema: { type: integer }
-      responses:
-        "200":
-          description: donor monthly summary
-security:
-  - bearerAuth: []
-tags:
-  - name: Auth
-    description: Authentication (login, refresh, password reset)
-  - name: NGOs
-    description: NGO management
-  - name: Centers
-    description: Center management
-  - name: Users
-    description: Staff and user management
-  - name: Attendance
-    description: Attendance marking and retrieval
-  - name: Students
-    description: Student management and attendance
-  - name: Donations
-    description: Donor & donation tracking
-  - name: Reports
-    description: Reporting endpoints (attendance, donations)
