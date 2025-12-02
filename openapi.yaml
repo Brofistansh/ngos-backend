@@ -1,0 +1,380 @@
+openapi: 3.1.0
+info:
+  title: NGOs Backend API
+  version: "1.0.0"
+  description: API for NGO management (auth, users, centers, attendance, donations, reports)
+servers:
+  - url: http://localhost:4000
+    description: Local dev
+  - url: https://ngos-backend.onrender.com
+    description: Production (Render)
+paths:
+  /auth/login:
+    post:
+      summary: Login user
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              required: [email,password]
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        "200":
+          description: Login success (returns access & refresh tokens)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+                  token: { type: string }
+                  access_token: { type: string }
+                  refresh_token: { type: string }
+  /auth/refresh:
+    post:
+      summary: Exchange refresh token for new access token (rotation)
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              required: [refresh_token]
+              properties:
+                refresh_token: { type: string }
+      responses:
+        "200":
+          description: New access and refresh tokens
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token: { type: string }
+                  refresh_token: { type: string }
+  /auth/request-password-reset:
+    post:
+      summary: Request password reset (sends email)
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              required: [email]
+              properties:
+                email: { type: string }
+      responses:
+        "200":
+          description: Always returns a generic ok message (security)
+  /auth/reset-password:
+    post:
+      summary: Reset password using token
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              required: [uid,token,new_password]
+              properties:
+                uid: { type: string, format: uuid }
+                token: { type: string }
+                new_password: { type: string }
+      responses:
+        "200":
+          description: Password reset success
+  /ngos:
+    post:
+      summary: Create NGO
+      tags: [NGOs]
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              required: [name,registration_number,contact_email]
+              properties:
+                name: { type: string }
+                registration_number: { type: string }
+                contact_email: { type: string, format: email }
+      responses:
+        "200":
+          description: NGO created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NGO'
+  /ngos/{ngoId}/centers:
+    post:
+      summary: Create center under NGO
+      tags: [Centers]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: ngoId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              required: [name,contact_phone,timezone]
+              properties:
+                name: { type: string }
+                contact_phone: { type: string }
+                timezone: { type: string }
+      responses:
+        "200":
+          description: Center created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Center'
+  /users:
+    post:
+      summary: Create user
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                name: { type: string }
+                email: { type: string }
+                password: { type: string }
+                role: { type: string }
+                ngo_id: { type: string }
+                center_id: { type: string }
+      responses:
+        "200":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+  /attendance/mark:
+    post:
+      summary: Mark staff attendance
+      tags: [Attendance]
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              required: [user_id,status]
+              properties:
+                user_id: { type: string }
+                status: { type: string, enum: [present,absent,late,excused] }
+      responses:
+        "200":
+          description: Attendance marked
+  /attendance/center/{centerId}:
+    get:
+      summary: Get attendance for a center (daily)
+      tags: [Attendance]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: centerId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: list of attendance objects
+  /student-attendance/mark:
+    post:
+      summary: Mark student attendance
+      tags: [Student Attendance]
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              required: [student_id,status]
+              properties:
+                student_id: { type: string }
+                status: { type: string, enum: [present,absent,late,excused] }
+      responses:
+        "200":
+          description: Student attendance marked
+  /students:
+    post:
+      summary: Create student
+      tags: [Students]
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              required: [name,age,gender,ngo_id,center_id]
+              properties:
+                name: { type: string }
+                age: { type: integer }
+                gender: { type: string }
+                ngo_id: { type: string }
+                center_id: { type: string }
+                assigned_teacher_id: { type: string }
+      responses:
+        "200":
+          description: Student created
+  /donors:
+    post:
+      summary: Create donor
+      tags: [Donations]
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                name: { type: string }
+                email: { type: string }
+                phone: { type: string }
+                address: { type: string }
+                notes: { type: string }
+      responses:
+        "200":
+          description: Donor created
+  /donations:
+    post:
+      summary: Record donation
+      tags: [Donations]
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              required: [donor_id,amount,currency,date,method]
+              properties:
+                donor_id: { type: string }
+                ngo_id: { type: string }
+                center_id: { type: string }
+                amount: { type: number, format: float }
+                currency: { type: string }
+                date: { type: string, format: date }
+                method: { type: string }
+                purpose: { type: string }
+      responses:
+        "200":
+          description: Donation recorded
+  /donations/{donationId}:
+    get:
+      summary: Get donation by id
+      tags: [Donations]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: donationId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Donation object
+  /reports/center/{centerId}/daily-summary:
+    get:
+      summary: Daily summary for a center
+      tags: [Reports]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: centerId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Daily summary
+  /reports/center/{centerId}/monthly/teachers:
+    get:
+      summary: Monthly teacher attendance for a center
+      tags: [Reports]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: centerId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: year
+          in: query
+          schema: { type: integer }
+        - name: month
+          in: query
+          schema: { type: integer }
+      responses:
+        "200":
+          description: monthly breakdown
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    User:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        email: { type: string }
+        role: { type: string }
+        ngo_id: { type: string, nullable: true }
+        center_id: { type: string, nullable: true }
+    NGO:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        registration_number: { type: string }
+        contact_email: { type: string }
+        createdAt: { type: string, format: date-time }
+    Center:
+      type: object
+      properties:
+        id: { type: string }
+        ngo_id: { type: string }
+        name: { type: string }
+        contact_phone: { type: string }
+        timezone: { type: string }
+    Student:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        age: { type: integer }
+        gender: { type: string }
+        enrollment_status: { type: string }
+    Donation:
+      type: object
+      properties:
+        id: { type: string }
+        donor_id: { type: string }
+        amount: { type: number }
+        currency: { type: string }
+        date: { type: string, format: date }
+    Attendance:
+      type: object
+      properties:
+        id: { type: string }
+        user_id: { type: string }
+        center_id: { type: string }
+        date: { type: string }
+        status: { type: string }
