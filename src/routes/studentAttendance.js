@@ -1,3 +1,32 @@
+/**
+ * @openapi
+ * tags:
+ *   - name: Student Attendance
+ *     description: Student attendance
+ */
+
+/**
+ * @openapi
+ * /student-attendance/mark:
+ *   post:
+ *     summary: Mark student attendance
+ *     tags: [Student Attendance]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/StudentAttendanceMark'
+ *     responses:
+ *       200:
+ *         description: Student attendance marked
+ *     x-role-rules: |
+ *       Allowed roles: center_manager, teacher, ngo_manager
+ */
+
+
 // src/routes/studentAttendance.js
 const express = require('express');
 const router = express.Router();

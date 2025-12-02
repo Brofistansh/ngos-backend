@@ -1,3 +1,84 @@
+/**
+ * @openapi
+ * tags:
+ *   - name: Reports
+ *     description: Reports (attendance, donations)
+ */
+
+/**
+ * @openapi
+ * /reports/center/{centerId}/daily-summary:
+ *   get:
+ *     summary: Daily summary for center
+ *     tags: [Reports]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: centerId
+ *         required: true
+ *         schema: { type: string }
+ *       - in: query
+ *         name: date
+ *         schema: { type: string, format: date }
+ *     responses:
+ *       200:
+ *         description: Daily summary
+ */
+
+/**
+ * @openapi
+ * /reports/center/{centerId}/monthly/teachers:
+ *   get:
+ *     summary: Monthly teacher attendance (center)
+ *     tags: [Reports]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: centerId
+ *         required: true
+ *         schema: { type: string }
+ *       - in: query
+ *         name: year
+ *         required: true
+ *         schema: { type: integer }
+ *       - in: query
+ *         name: month
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Monthly breakdown
+ */
+
+/**
+ * @openapi
+ * /reports/ngo/{ngoId}/monthly/teachers:
+ *   get:
+ *     summary: Monthly teacher attendance (ngo-wide)
+ *     tags: [Reports]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: ngoId
+ *         required: true
+ *         schema: { type: string }
+ *       - in: query
+ *         name: year
+ *         required: true
+ *         schema: { type: integer }
+ *       - in: query
+ *         name: month
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200:
+ *         description: NGO monthly breakdown
+ */
+
+
 // src/routes/report.js
 const express = require('express');
 const router = express.Router();

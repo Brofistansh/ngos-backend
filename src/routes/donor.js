@@ -1,3 +1,30 @@
+/**
+ * @openapi
+ * tags:
+ *   - name: Donations
+ *     description: Donors and donations
+ */
+
+/**
+ * @openapi
+ * /donors:
+ *   post:
+ *     summary: Create donor
+ *     tags: [Donations]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CreateDonor'
+ *     responses:
+ *       200:
+ *         description: Donor created
+ */
+
+
+
 // src/routes/donor.js
 const express = require('express');
 const router = express.Router();

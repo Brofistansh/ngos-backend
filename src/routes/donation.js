@@ -1,3 +1,38 @@
+/**
+ * @openapi
+ * /donations:
+ *   post:
+ *     summary: Record a donation
+ *     tags: [Donations]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CreateDonation'
+ *     responses:
+ *       200:
+ *         description: Donation recorded
+ *
+ * /donations/{donationId}:
+ *   get:
+ *     summary: Get donation by ID
+ *     tags: [Donations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: donationId
+ *         in: path
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Donation object
+ */
+
+
 // src/routes/donation.js
 const express = require('express');
 const router = express.Router();

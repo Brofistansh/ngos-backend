@@ -1,3 +1,76 @@
+/**
+ * @openapi
+ * /reports/donations/center/{centerId}/monthly:
+ *   get:
+ *     summary: Donations monthly by center
+ *     tags: [Reports, Donations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: centerId
+ *         required: true
+ *         schema: { type: string }
+ *       - in: query
+ *         name: year
+ *         required: true
+ *         schema: { type: integer }
+ *       - in: query
+ *         name: month
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200:
+ *         description: donation summary
+ *
+ * /reports/donations/ngo/{ngoId}/monthly:
+ *   get:
+ *     summary: Donations monthly by NGO
+ *     tags: [Reports, Donations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: ngoId
+ *         required: true
+ *         schema: { type: string }
+ *       - in: query
+ *         name: year
+ *         required: true
+ *         schema: { type: integer }
+ *       - in: query
+ *         name: month
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200:
+ *         description: donation summary
+ *
+ * /reports/donations/donor/{donorId}/monthly:
+ *   get:
+ *     summary: Donor monthly history
+ *     tags: [Reports, Donations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: donorId
+ *         required: true
+ *         schema: { type: string }
+ *       - in: query
+ *         name: year
+ *         required: true
+ *         schema: { type: integer }
+ *       - in: query
+ *         name: month
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200:
+ *         description: donor donation summary
+ */
+
+
 // src/routes/donationReports.js
 const express = require('express');
 const router = express.Router();

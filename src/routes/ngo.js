@@ -1,3 +1,36 @@
+/**
+ * @openapi
+ * tags:
+ *   - name: NGOs
+ *     description: NGO management
+ */
+
+/**
+ * @openapi
+ * /ngos:
+ *   post:
+ *     summary: Create NGO
+ *     tags: [NGOs]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CreateNGO'
+ *     responses:
+ *       200:
+ *         description: Created NGO
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/NGO'
+ *     x-role-rules: |
+ *       Allowed roles: super_admin, ngo_admin (within their own NGO)
+ */
+
+
 const express = require('express');
 const router = express.Router();
 const { createNGO, getNGOs } = require('../controllers/ngoController');

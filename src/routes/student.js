@@ -1,3 +1,48 @@
+/**
+ * @openapi
+ * tags:
+ *   - name: Students
+ *     description: Student management
+ */
+
+/**
+ * @openapi
+ * /students:
+ *   post:
+ *     summary: Create a student
+ *     tags: [Students]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CreateStudent'
+ *     responses:
+ *       200:
+ *         description: Student created
+ */
+
+/**
+ * @openapi
+ * /students/center/{centerId}:
+ *   get:
+ *     summary: List students by center
+ *     tags: [Students]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: centerId
+ *         in: path
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: student array
+ */
+
+
 // src/routes/student.js
 const express = require('express');
 const router = express.Router();
