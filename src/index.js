@@ -9,24 +9,23 @@ const app = express();
 // ------------------------------
 // MIDDLEWARES (MUST BE FIRST)
 // ------------------------------
-app.use(express.json());
+app.use(express.json());     // FIXES req.body undefined
 app.use(cors());
 app.use(helmet());
 app.use(morgan('dev'));
 
 const apiKeyMiddleware = require('./middlewares/apiKeyMiddleware');
-app.use(apiKeyMiddleware); // Apply globally BEFORE routes
+app.use(apiKeyMiddleware);   // FIXED: must be before routes
 
 // ------------------------------
 // SWAGGER DOCS
 // ------------------------------
 const swaggerUi = require("swagger-ui-express");
 const swaggerSpec = require("./docs/swagger");
-
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // ------------------------------
-// HEALTH CHECK ROUTES
+// HEALTH CHECK
 // ------------------------------
 app.get('/', (req, res) => {
   res.json({ status: "OK", message: "NGO Backend is Running 🔥" });
@@ -57,12 +56,8 @@ app.use('/reports/donations', require('./routes/donationReports'));
 const sequelize = require('./db/postgres');
 
 sequelize.authenticate()
-  .then(() => {
-    console.log("PostgreSQL connected successfully");
-  })
-  .catch((err) => {
-    console.error("Database error:", err);
-  });
+  .then(() => console.log("PostgreSQL connected successfully"))
+  .catch(err => console.error("Database error:", err));
 
 // ------------------------------
 // START SERVER
