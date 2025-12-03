@@ -47,7 +47,7 @@ app.use(apiKeyMiddleware);   // ⭐ This should now NOT block /debug/hash and /a
 // PROTECTED ROUTES
 // ------------------------------
 app.use('/ngos', require('./routes/ngo'));
-app.use('/centers', require('./routes/center'));
+app.use('/ngos', require('./routes/center'));    // <- mounted under /ngos so center routes become /ngos/:ngo_id/centers
 app.use('/users', require('./routes/user'));
 app.use('/attendance', require('./routes/attendance'));
 app.use('/students', require('./routes/student'));
