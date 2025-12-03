@@ -1,3 +1,5 @@
+// src/index.js
+
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -7,15 +9,15 @@ const config = require('../config');
 const app = express();
 
 // ------------------------------
-// MIDDLEWARES (MUST BE FIRST)
+// GLOBAL MIDDLEWARES (must come FIRST)
 // ------------------------------
-app.use(express.json());     // FIXES req.body undefined
-app.use(cors());
 app.use(helmet());
+app.use(cors());
+app.use(express.json());
 app.use(morgan('dev'));
 
 const apiKeyMiddleware = require('./middlewares/apiKeyMiddleware');
-app.use(apiKeyMiddleware);   // FIXED: must be before routes
+app.use(apiKeyMiddleware);   // ⭐ MUST BE BEFORE ROUTES
 
 // ------------------------------
 // SWAGGER DOCS
@@ -24,19 +26,20 @@ const swaggerUi = require("swagger-ui-express");
 const swaggerSpec = require("./docs/swagger");
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
+
 // ------------------------------
-// HEALTH CHECK
+// HEALTH CHECK ROUTES
 // ------------------------------
 app.get('/', (req, res) => {
   res.json({ status: "OK", message: "NGO Backend is Running 🔥" });
 });
-
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });
 });
 
+
 // ------------------------------
-// ROUTES
+// ROUTES (AFTER middleware)
 // ------------------------------
 app.use('/auth', require('./routes/auth'));
 app.use('/ngos', require('./routes/ngo'));
@@ -50,14 +53,20 @@ app.use('/donors', require('./routes/donor'));
 app.use('/donations', require('./routes/donation'));
 app.use('/reports/donations', require('./routes/donationReports'));
 
+
 // ------------------------------
 // POSTGRES CONNECTION
 // ------------------------------
 const sequelize = require('./db/postgres');
 
 sequelize.authenticate()
-  .then(() => console.log("PostgreSQL connected successfully"))
-  .catch(err => console.error("Database error:", err));
+  .then(() => {
+    console.log("PostgreSQL connected successfully");
+    return sequelize.sync({ alter: true });
+  })
+  .then(() => console.log("Models synced"))
+  .catch((err) => console.error("Database error:", err));
+
 
 // ------------------------------
 // START SERVER
