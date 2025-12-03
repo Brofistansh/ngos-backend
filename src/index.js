@@ -7,18 +7,23 @@ const config = require('../config');
 const app = express();
 
 // ------------------------------
-// MIDDLEWARES
+// MIDDLEWARES (MUST BE FIRST)
 // ------------------------------
 app.use(express.json());
 app.use(cors());
 app.use(helmet());
 app.use(morgan('dev'));
 
+const apiKeyMiddleware = require('./middlewares/apiKeyMiddleware');
+app.use(apiKeyMiddleware); // Apply globally BEFORE routes
+
+// ------------------------------
+// SWAGGER DOCS
+// ------------------------------
 const swaggerUi = require("swagger-ui-express");
 const swaggerSpec = require("./docs/swagger");
 
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-
 
 // ------------------------------
 // HEALTH CHECK ROUTES
@@ -32,40 +37,19 @@ app.get('/health', (req, res) => {
 });
 
 // ------------------------------
-// ROUTES (LOAD BEFORE LISTEN)
+// ROUTES
 // ------------------------------
-const authRoutes = require('./routes/auth');
-app.use('/auth', authRoutes);
-
-const ngoRoutes = require('./routes/ngo');
-app.use('/ngos', ngoRoutes);
-
-const centerRoutes = require('./routes/center');
-app.use('/centers', centerRoutes);
-
-const userRoutes = require('./routes/user');
-app.use('/users', userRoutes);
-
-const attendanceRoutes = require('./routes/attendance');
-app.use('/attendance', attendanceRoutes);
-
-const studentRoutes = require('./routes/student');
-app.use('/students', studentRoutes);
-
-const studentAttendanceRoutes = require('./routes/studentAttendance');
-app.use('/student-attendance', studentAttendanceRoutes);
-
-const reportRoutes = require('./routes/report');
-app.use('/reports', reportRoutes);
-
-const donorRoutes = require('./routes/donor');
-app.use('/donors', donorRoutes);
-
-const donationRoutes = require('./routes/donation');
-app.use('/donations', donationRoutes);
-
-const donationReportRoutes = require('./routes/donationReports');
-app.use('/reports/donations', donationReportRoutes);
+app.use('/auth', require('./routes/auth'));
+app.use('/ngos', require('./routes/ngo'));
+app.use('/centers', require('./routes/center'));
+app.use('/users', require('./routes/user'));
+app.use('/attendance', require('./routes/attendance'));
+app.use('/students', require('./routes/student'));
+app.use('/student-attendance', require('./routes/studentAttendance'));
+app.use('/reports', require('./routes/report'));
+app.use('/donors', require('./routes/donor'));
+app.use('/donations', require('./routes/donation'));
+app.use('/reports/donations', require('./routes/donationReports'));
 
 // ------------------------------
 // POSTGRES CONNECTION
@@ -75,10 +59,6 @@ const sequelize = require('./db/postgres');
 sequelize.authenticate()
   .then(() => {
     console.log("PostgreSQL connected successfully");
-    return sequelize.sync({ alter: true });
-  })
-  .then(() => {
-    console.log("Models synced");
   })
   .catch((err) => {
     console.error("Database error:", err);
@@ -92,9 +72,3 @@ app.listen(config.PORT, () => {
 });
 
 module.exports = app;
-
-
-const apiKeyMiddleware = require('./middlewares/apiKeyMiddleware');
-
-// apply globally to all routes
-app.use(apiKeyMiddleware);
