@@ -75,6 +75,13 @@ sequelize.authenticate()
   .catch((err) => console.error("Database error:", err));
 
 
+
+  app.get("/debug/hash", async (req, res) => {
+  const bcrypt = require("bcryptjs");
+  const hash = await bcrypt.hash("superpass123", 10);
+  res.send(hash);
+});
+
 // ------------------------------
 // START SERVER
 // ------------------------------
