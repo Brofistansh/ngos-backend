@@ -11,37 +11,36 @@ const app = express();
 // ------------------------------
 // GLOBAL MIDDLEWARES (must come FIRST)
 // ------------------------------
-app.use(helmet());
+app.use(express.json());     // ⭐ MUST BE FIRST
 app.use(cors());
-app.use(express.json());
+app.use(helmet());
 app.use(morgan('dev'));
 
-const apiKeyMiddleware = require('./middlewares/apiKeyMiddleware');
-app.use(apiKeyMiddleware);   // ⭐ MUST BE BEFORE ROUTES
-
 // ------------------------------
-// SWAGGER DOCS
-// ------------------------------
-const swaggerUi = require("swagger-ui-express");
-const swaggerSpec = require("./docs/swagger");
-app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-
-
-// ------------------------------
-// HEALTH CHECK ROUTES
+// PUBLIC ROUTES (NO API KEY REQUIRED)
 // ------------------------------
 app.get('/', (req, res) => {
   res.json({ status: "OK", message: "NGO Backend is Running 🔥" });
 });
+
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });
 });
 
+// Auth routes MUST be open so login can work
+app.use('/auth', require('./routes/auth'));
+
 
 // ------------------------------
-// ROUTES (AFTER middleware)
+// API KEY MIDDLEWARE (APPLIES AFTER AUTH)
 // ------------------------------
-app.use('/auth', require('./routes/auth'));
+const apiKeyMiddleware = require('./middlewares/apiKeyMiddleware');
+app.use(apiKeyMiddleware);  // ⭐ NOW it will not block /auth/login
+
+
+// ------------------------------
+// PROTECTED ROUTES
+// ------------------------------
 app.use('/ngos', require('./routes/ngo'));
 app.use('/centers', require('./routes/center'));
 app.use('/users', require('./routes/user'));
@@ -52,6 +51,14 @@ app.use('/reports', require('./routes/report'));
 app.use('/donors', require('./routes/donor'));
 app.use('/donations', require('./routes/donation'));
 app.use('/reports/donations', require('./routes/donationReports'));
+
+
+// ------------------------------
+// SWAGGER DOCS
+// ------------------------------
+const swaggerUi = require("swagger-ui-express");
+const swaggerSpec = require("./docs/swagger");
+app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 
 // ------------------------------
