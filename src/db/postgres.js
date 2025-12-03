@@ -2,14 +2,20 @@ const { Sequelize } = require('sequelize');
 const config = require('../../config');
 
 const sequelize = new Sequelize(
-  config.DB_NAME || 'ngos_dev',
-  config.DB_USER || 'postgres',
-  config.DB_PASS || 'postgres',
+  config.DB_NAME,
+  config.DB_USER,
+  config.DB_PASS,
   {
-    host: config.DB_HOST || 'localhost',
-    port: config.DB_PORT || 5432,
+    host: config.DB_HOST,
+    port: config.DB_PORT,
     dialect: 'postgres',
     logging: false,
+    dialectOptions: {
+      ssl: {
+        require: true,
+        rejectUnauthorized: false,
+      },
+    },
   }
 );
 
