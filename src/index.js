@@ -1,5 +1,3 @@
-// src/index.js
-
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -9,9 +7,9 @@ const config = require('../config');
 const app = express();
 
 // ------------------------------
-// GLOBAL MIDDLEWARES (must come FIRST)
+// GLOBAL MIDDLEWARES
 // ------------------------------
-app.use(express.json());     // ⭐ MUST BE FIRST
+app.use(express.json());
 app.use(cors());
 app.use(helmet());
 app.use(morgan('dev'));
@@ -27,15 +25,22 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });
 });
 
-// Auth routes MUST be open so login can work
+// TEMP HASH GENERATOR ROUTE (Public)
+app.get('/debug/hash', async (req, res) => {
+  const bcrypt = require('bcryptjs');
+  const hash = await bcrypt.hash("superpass123", 10);
+  res.json({ hash });
+});
+
+// Auth routes MUST be OPEN
 app.use('/auth', require('./routes/auth'));
 
 
 // ------------------------------
-// API KEY MIDDLEWARE (APPLIES AFTER AUTH)
+// API KEY MIDDLEWARE (after auth)
 // ------------------------------
 const apiKeyMiddleware = require('./middlewares/apiKeyMiddleware');
-app.use(apiKeyMiddleware);  // ⭐ NOW it will not block /auth/login
+app.use(apiKeyMiddleware);   // ⭐ This should now NOT block /debug/hash and /auth
 
 
 // ------------------------------
@@ -52,39 +57,21 @@ app.use('/donors', require('./routes/donor'));
 app.use('/donations', require('./routes/donation'));
 app.use('/reports/donations', require('./routes/donationReports'));
 
-
-// ------------------------------
-// SWAGGER DOCS
-// ------------------------------
+// Swagger
 const swaggerUi = require("swagger-ui-express");
 const swaggerSpec = require("./docs/swagger");
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 
-// ------------------------------
-// POSTGRES CONNECTION
-// ------------------------------
+// DB
 const sequelize = require('./db/postgres');
-
 sequelize.authenticate()
-  .then(() => {
-    console.log("PostgreSQL connected successfully");
-    return sequelize.sync({ alter: true });
-  })
-  .then(() => console.log("Models synced"))
-  .catch((err) => console.error("Database error:", err));
+  .then(() => sequelize.sync({ alter: true }))
+  .then(() => console.log("DB ready"))
+  .catch(err => console.error(err));
 
 
-
-  app.get("/debug/hash", async (req, res) => {
-  const bcrypt = require("bcryptjs");
-  const hash = await bcrypt.hash("superpass123", 10);
-  res.send(hash);
-});
-
-// ------------------------------
 // START SERVER
-// ------------------------------
 app.listen(config.PORT, () => {
   console.log(`Server started on port ${config.PORT}`);
 });
