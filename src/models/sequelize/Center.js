@@ -14,7 +14,14 @@ const Center = sequelize.define('Center', {
   },
   name: { type: DataTypes.STRING, allowNull: false },
   contact_phone: { type: DataTypes.STRING },
-  timezone: { type: DataTypes.STRING, defaultValue: "Asia/Kolkata" }
+  timezone: { type: DataTypes.STRING, defaultValue: "Asia/Kolkata" },
+
+  // ⬇️ ADD THIS
+  zone: {
+    type: DataTypes.STRING,
+    allowNull: true, // because existing centers don't have zone
+  }
+
 }, {
   tableName: 'centers',
   timestamps: true

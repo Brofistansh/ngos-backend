@@ -4,7 +4,7 @@ const NGO = require('../models/sequelize/NGO');
 exports.createCenter = async (req, res) => {
   try {
     const { ngo_id } = req.params;  // NGO ID in URL
-    const { name, contact_phone, timezone } = req.body;
+    const { name, contact_phone, timezone, zone } = req.body; // ⬅️ zone added here
 
     const ngo = await NGO.findByPk(ngo_id);
     if (!ngo) {
@@ -15,7 +15,8 @@ exports.createCenter = async (req, res) => {
       ngo_id,
       name,
       contact_phone,
-      timezone
+      timezone,
+      zone // ⬅️ zone stored in DB
     });
 
     return res.status(201).json({
@@ -29,13 +30,19 @@ exports.createCenter = async (req, res) => {
   }
 };
 
+
 exports.getCentersByNGO = async (req, res) => {
   try {
     const { ngo_id } = req.params;
+    const { zone } = req.query; // ⬅️ zone filter from query
 
-    const centers = await Center.findAll({
-      where: { ngo_id }
-    });
+    let where = { ngo_id }; // base filter
+
+    if (zone) {
+      where.zone = zone; // ⬅️ apply zone filter
+    }
+
+    const centers = await Center.findAll({ where });
 
     return res.json(centers);
 
@@ -43,4 +50,3 @@ exports.getCentersByNGO = async (req, res) => {
     res.status(500).json({ message: "Error fetching centers" });
   }
 };
-
