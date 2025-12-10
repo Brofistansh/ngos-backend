@@ -79,4 +79,4 @@ User.hasMany(Donation, { foreignKey: 'recorded_by' });
 Donation.belongsTo(User, { foreignKey: 'recorded_by' });
 
 module.exports = Donation;
-src/routes/donation.js
+
