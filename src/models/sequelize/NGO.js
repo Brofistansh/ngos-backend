@@ -12,24 +12,20 @@ const NGO = sequelize.define('NGO', {
     type: DataTypes.STRING,
     allowNull: false,
     unique: true,
-    validate: { notEmpty: true }
   },
 
   phone: {
     type: DataTypes.STRING,
-    allowNull: false,
-    validate: { notEmpty: true }
+    allowNull: true     // TEMP FIX
   },
 
   zone: {
     type: DataTypes.STRING,
-    allowNull: false,
-    validate: { notEmpty: true }
+    allowNull: true     // TEMP FIX
   },
 
   status: {
     type: DataTypes.ENUM('active', 'inactive'),
-    allowNull: false,
     defaultValue: 'active'
   }
 

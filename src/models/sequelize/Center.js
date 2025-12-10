@@ -11,19 +11,22 @@ const Center = sequelize.define('Center', {
   name: {
     type: DataTypes.STRING,
     allowNull: false,
-    validate: { notEmpty: true }
   },
 
-  phone: {
+  contact_phone: {
     type: DataTypes.STRING,
-    allowNull: false,
-    validate: { notEmpty: true }
+    allowNull: false
+  },
+
+  timezone: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    defaultValue: "Asia/Kolkata"
   },
 
   zone: {
     type: DataTypes.STRING,
-    allowNull: false,
-    validate: { notEmpty: true }
+    allowNull: false
   },
 
   address: {
@@ -33,7 +36,6 @@ const Center = sequelize.define('Center', {
 
   status: {
     type: DataTypes.ENUM('active', 'inactive'),
-    allowNull: false,
     defaultValue: 'active'
   },
 
