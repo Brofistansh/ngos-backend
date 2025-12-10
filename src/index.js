@@ -38,8 +38,7 @@ app.use(apiKeyMiddleware);
 // PROTECTED ROUTES
 // ------------------------------
 app.use('/api/ngos', require('./routes/ngo'));
-app.use('/api/ngos', require('./routes/center')); // centers under NGOs
-
+app.use('/api/ngos', require('./routes/center'));
 app.use('/api/users', require('./routes/user'));
 app.use('/api/attendance', require('./routes/attendance'));
 app.use('/api/students', require('./routes/student'));
@@ -59,7 +58,7 @@ const swaggerSpec = require("./docs/swagger");
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // ------------------------------
-// DB CONNECTION + TEMPORARY SYNC
+// DB CONNECTION
 // ------------------------------
 const sequelize = require('./db/postgres');
 
@@ -68,12 +67,9 @@ const sequelize = require('./db/postgres');
     await sequelize.authenticate();
     console.log("🟢 PostgreSQL Connected");
 
-    // ⚠ UPDATE DB FOR USER MODEL CHANGES (TEMP)
-    await sequelize.sync({ alter: true });
-    console.log("🔄 Database schema updated successfully (User.js changes applied)");
-
-    // ⚠ Remove alter:true later and use:
-    // await sequelize.sync();
+    // FINAL PRODUCTION DB SYNC
+    await sequelize.sync();
+    console.log("🟢 Database synced without alter");
 
   } catch (error) {
     console.error("❌ Database Sync Error:", error.message);
