@@ -7,9 +7,33 @@ const NGO = sequelize.define('NGO', {
     defaultValue: DataTypes.UUIDV4,
     primaryKey: true
   },
-  name: { type: DataTypes.STRING, allowNull: false },
-  registration_number: { type: DataTypes.STRING },
-  contact_email: { type: DataTypes.STRING },
+
+  name: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+
+  registration_number: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+
+  contact_email: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    validate: { isEmail: true }
+  },
+
+  phone: {
+    type: DataTypes.STRING,
+    allowNull: false   // 🔥 Mandatory
+  },
+
+  zone: {
+    type: DataTypes.STRING,
+    allowNull: false   // 🔥 Mandatory
+  }
+
 }, {
   tableName: 'ngos',
   timestamps: true
