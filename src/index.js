@@ -38,8 +38,13 @@ app.use(apiKeyMiddleware);
 // PROTECTED ROUTES
 // ------------------------------
 app.use('/api/ngos', require('./routes/ngo'));
-app.use('/api/centers', require('./routes/center'));
+
+// Mount centers UNDER ngos so full path is:
+// POST /api/ngos/:ngo_id/centers
+app.use('/api/ngos', require('./routes/center'));
+
 app.use('/api/users', require('./routes/user'));
+
 app.use('/api/attendance', require('./routes/attendance'));
 app.use('/api/students', require('./routes/student'));
 app.use('/api/student-attendance', require('./routes/studentAttendance'));
