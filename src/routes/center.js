@@ -17,7 +17,7 @@ router.post(
 router.get(
   '/:ngo_id/centers',
   auth,
-  centerController.getCentersByNGO   // <-- FIXED
+  centerController.getCentersByNGO   // ← FIXED
 );
 
 // UPDATE Center
