@@ -1,3 +1,4 @@
+// src/middlewares/authMiddleware.js
 const jwt = require('jsonwebtoken');
 const config = require('../../config');
 
@@ -11,7 +12,7 @@ module.exports = function (req, res, next) {
   try {
     const token = header.split(" ")[1];
     const decoded = jwt.verify(token, config.JWT_SECRET);
-    req.user = decoded;
+    req.user = decoded; // user data now available everywhere
     next();
   } catch (err) {
     return res.status(401).json({ message: "Invalid or expired token" });
