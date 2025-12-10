@@ -1,11 +1,11 @@
 const express = require('express');
-const router = express.Router({ mergeParams: true });
+const router = express.Router();
 
 const centerController = require('../controllers/centerController');
 const auth = require('../middlewares/authMiddleware');
 const roles = require('../middlewares/roleMiddleware');
 
-// Create Center under NGO
+// CREATE Center under NGO
 router.post(
   '/:ngo_id/centers',
   auth,
@@ -13,24 +13,24 @@ router.post(
   centerController.createCenter
 );
 
-// Get all centers of an NGO
+// GET all centers of an NGO
 router.get(
   '/:ngo_id/centers',
   auth,
   centerController.getCenters
 );
 
-// Update Center
+// UPDATE Center
 router.put(
-  '/centers/:id',
+  '/:ngo_id/centers/:id',
   auth,
   roles("center_admin"),
   centerController.updateCenter
 );
 
-// Soft Delete Center
+// SOFT DELETE Center
 router.delete(
-  '/centers/:id',
+  '/:ngo_id/centers/:id',
   auth,
   roles("center_admin"),
   centerController.deleteCenter
