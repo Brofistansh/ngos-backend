@@ -24,14 +24,16 @@ const NGO = sequelize.define('NGO', {
     validate: { isEmail: true }
   },
 
+  // 🔄 TEMP FIX: allowNull set to true
   phone: {
     type: DataTypes.STRING,
-    allowNull: false   // 🔥 Mandatory
+    allowNull: true   // will make required later
   },
 
+  // 🔄 TEMP FIX: allowNull set to true
   zone: {
     type: DataTypes.STRING,
-    allowNull: false   // 🔥 Mandatory
+    allowNull: true   // will make required later
   }
 
 }, {
