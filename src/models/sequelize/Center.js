@@ -1,6 +1,5 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../../db/postgres');
-const NGO = require('./NGO');
 
 const Center = sequelize.define('Center', {
   id: {
@@ -8,27 +7,44 @@ const Center = sequelize.define('Center', {
     defaultValue: DataTypes.UUIDV4,
     primaryKey: true
   },
+
+  name: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    validate: { notEmpty: true }
+  },
+
+  phone: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    validate: { notEmpty: true }
+  },
+
+  zone: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    validate: { notEmpty: true }
+  },
+
+  address: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+
+  status: {
+    type: DataTypes.ENUM('active', 'inactive'),
+    allowNull: false,
+    defaultValue: 'active'
+  },
+
   ngo_id: {
     type: DataTypes.UUID,
     allowNull: false
-  },
-  name: { type: DataTypes.STRING, allowNull: false },
-  contact_phone: { type: DataTypes.STRING },
-  timezone: { type: DataTypes.STRING, defaultValue: "Asia/Kolkata" },
-
-  // ⬇️ ADD THIS
-  zone: {
-    type: DataTypes.STRING,
-    allowNull: true, // because existing centers don't have zone
   }
 
 }, {
   tableName: 'centers',
   timestamps: true
 });
-
-// Relationship
-NGO.hasMany(Center, { foreignKey: 'ngo_id' });
-Center.belongsTo(NGO, { foreignKey: 'ngo_id' });
 
 module.exports = Center;

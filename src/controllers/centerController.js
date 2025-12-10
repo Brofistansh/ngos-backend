@@ -50,3 +50,45 @@ exports.getCentersByNGO = async (req, res) => {
     res.status(500).json({ message: "Error fetching centers" });
   }
 };
+// UPDATE CENTER
+exports.updateCenter = async (req, res) => {
+  try {
+    const center = await Center.findByPk(req.params.id);
+
+    if (!center || center.status === 'inactive') {
+      return res.status(404).json({ message: 'Center not found or inactive' });
+    }
+
+    await center.update(req.body);
+
+    res.json({
+      message: 'Center updated successfully',
+      center
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Failed to update center' });
+  }
+};
+
+// SOFT DELETE CENTER
+exports.deleteCenter = async (req, res) => {
+  try {
+    const center = await Center.findByPk(req.params.id);
+
+    if (!center || center.status === 'inactive') {
+      return res.status(404).json({ message: 'Center not found or already inactive' });
+    }
+
+    await center.update({ status: 'inactive' });
+
+    res.json({
+      message: 'Center deactivated successfully'
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Failed to delete center' });
+  }
+};

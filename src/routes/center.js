@@ -1,53 +1,39 @@
-/**
- * @openapi
- * tags:
- *   - name: Centers
- *     description: Center management endpoints
- */
-
-/**
- * @openapi
- * /ngos/{ngoId}/centers:
- *   post:
- *     summary: Create center under NGO
- *     tags: [Centers]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: ngoId
- *         required: true
- *         schema:
- *           type: string
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/CreateCenter'
- *     responses:
- *       200:
- *         description: Center created
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Center'
- *     x-role-rules: |
- *       Allowed roles: ngo_admin, ngo_manager, super_admin
- */
-
-
-
 const express = require('express');
-const router = express.Router();
-const { createCenter, getCentersByNGO } = require('../controllers/centerController');
+const router = express.Router({ mergeParams: true });
+
+const centerController = require('../controllers/centerController');
 const auth = require('../middlewares/authMiddleware');
 const roles = require('../middlewares/roleMiddleware');
 
-// Only super_admin or ngo_manager can create a center
-router.post('/:ngo_id/centers', auth, roles("super_admin", "ngo_admin", "ngo_manager"), createCenter);
+// Create Center under NGO
+router.post(
+  '/:ngo_id/centers',
+  auth,
+  roles("ngo_admin"),
+  centerController.createCenter
+);
 
-// Any authenticated user can view centers of an NGO
-router.get('/:ngo_id/centers', auth, getCentersByNGO);
+// Get all centers of an NGO
+router.get(
+  '/:ngo_id/centers',
+  auth,
+  centerController.getCenters
+);
+
+// Update Center
+router.put(
+  '/centers/:id',
+  auth,
+  roles("center_admin"),
+  centerController.updateCenter
+);
+
+// Soft Delete Center
+router.delete(
+  '/centers/:id',
+  auth,
+  roles("center_admin"),
+  centerController.deleteCenter
+);
 
 module.exports = router;
