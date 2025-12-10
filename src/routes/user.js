@@ -1,39 +1,3 @@
-/**
- * @openapi
- * tags:
- *   - name: Users
- *     description: User creation and management
- */
-
-/**
- * @openapi
- * /users:
- *   post:
- *     summary: Create user
- *     tags: [Users]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/CreateUser'
- *     responses:
- *       200:
- *         description: user created
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/User'
- *     x-role-rules: |
- *       Role creation rules:
- *         - super_admin: full permissions
- *         - ngo_admin: create roles within their NGO (ngo_manager, center_manager, teacher)
- *         - center_manager: teacher, teacher_assistant within their center
- */
-
-
 
 // src/routes/user.js
 const express = require('express');

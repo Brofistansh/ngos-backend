@@ -29,7 +29,7 @@ app.get('/health', (req, res) => {
 app.use('/auth', require('./routes/auth'));
 
 // ------------------------------
-// API KEY MIDDLEWARE (after auth)
+// API KEY MIDDLEWARE
 // ------------------------------
 const apiKeyMiddleware = require('./middlewares/apiKeyMiddleware');
 app.use(apiKeyMiddleware);
@@ -38,13 +38,9 @@ app.use(apiKeyMiddleware);
 // PROTECTED ROUTES
 // ------------------------------
 app.use('/api/ngos', require('./routes/ngo'));
-
-// Mount centers UNDER ngos so full path is:
-// POST /api/ngos/:ngo_id/centers
-app.use('/api/ngos', require('./routes/center'));
+app.use('/api/ngos', require('./routes/center')); // centers under NGOs
 
 app.use('/api/users', require('./routes/user'));
-
 app.use('/api/attendance', require('./routes/attendance'));
 app.use('/api/students', require('./routes/student'));
 app.use('/api/student-attendance', require('./routes/studentAttendance'));
@@ -52,23 +48,37 @@ app.use('/api/reports', require('./routes/report'));
 app.use('/api/donors', require('./routes/donor'));
 app.use('/api/donations', require('./routes/donation'));
 app.use('/api/reports/donations', require('./routes/donationReports'));
-
 app.use('/api/zones', require('./routes/zoneRoutes'));
 app.use('/api/managers', require('./routes/managerRoutes'));
 
-// Swagger docs
+// ------------------------------
+// SWAGGER DOCS
+// ------------------------------
 const swaggerUi = require("swagger-ui-express");
 const swaggerSpec = require("./docs/swagger");
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // ------------------------------
-// TEMP DATABASE SYNC FIX (FOR LOGIN)
+// DB CONNECTION + TEMPORARY SYNC
 // ------------------------------
 const sequelize = require('./db/postgres');
-sequelize.authenticate()
-  .then(() => sequelize.sync({ alter: true }))   // << Important Fix 🔥
-  .then(() => console.log("🔄 DB synced (temporary alter enabled)"))
-  .catch(err => console.error("❌ DB Sync Error:", err));
+
+(async () => {
+  try {
+    await sequelize.authenticate();
+    console.log("🟢 PostgreSQL Connected");
+
+    // ⚠ UPDATE DB FOR USER MODEL CHANGES (TEMP)
+    await sequelize.sync({ alter: true });
+    console.log("🔄 Database schema updated successfully (User.js changes applied)");
+
+    // ⚠ Remove alter:true later and use:
+    // await sequelize.sync();
+
+  } catch (error) {
+    console.error("❌ Database Sync Error:", error.message);
+  }
+})();
 
 // ------------------------------
 // GLOBAL ERROR HANDLER
