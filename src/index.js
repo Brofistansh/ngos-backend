@@ -116,16 +116,20 @@ app.use(apiKeyMiddleware);
 // ------------------------------
 // PROTECTED ROUTES
 // ------------------------------
-app.use('/ngos', require('./routes/ngo'));
-app.use('/ngos', require('./routes/center'));
-app.use('/users', require('./routes/user'));
-app.use('/attendance', require('./routes/attendance'));
-app.use('/students', require('./routes/student'));
-app.use('/student-attendance', require('./routes/studentAttendance'));
-app.use('/reports', require('./routes/report'));
-app.use('/donors', require('./routes/donor'));
-app.use('/donations', require('./routes/donation'));
-app.use('/reports/donations', require('./routes/donationReports'));
+app.use('/api/ngos', require('./routes/ngo'));
+app.use('/api/centers', require('./routes/center'));
+app.use('/api/users', require('./routes/user'));
+app.use('/api/attendance', require('./routes/attendance'));
+app.use('/api/students', require('./routes/student'));
+app.use('/api/student-attendance', require('./routes/studentAttendance'));
+app.use('/api/reports', require('./routes/report'));
+app.use('/api/donors', require('./routes/donor'));
+app.use('/api/donations', require('./routes/donation'));
+app.use('/api/reports/donations', require('./routes/donationReports'));
+
+app.use('/api/zones', require('./routes/zoneRoutes'));
+app.use('/api/managers', require('./routes/managerRoutes'));
+
 
 // Swagger docs
 const swaggerUi = require("swagger-ui-express");
