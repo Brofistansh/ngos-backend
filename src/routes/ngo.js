@@ -43,4 +43,8 @@ router.post('/', auth, roles("super_admin"), createNGO);
 // Any authenticated user can view NGOs
 router.get('/', auth, getNGOs);
 
+router.put('/:id', authMiddleware, ngoController.updateNgo);
+router.delete('/:id', authMiddleware, ngoController.deleteNgo);
+
+
 module.exports = router;

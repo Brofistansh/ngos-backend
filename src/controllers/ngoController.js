@@ -1,31 +1,42 @@
 const NGO = require('../models/sequelize/NGO');
 
-exports.createNGO = async (req, res) => {
+// UPDATE NGO
+exports.updateNgo = async (req, res) => {
   try {
-    const { name, registration_number, contact_email } = req.body;
+    const ngo = await NGO.findByPk(req.params.id);
 
-    const ngo = await NGO.create({
-      name,
-      registration_number,
-      contact_email
-    });
+    if (!ngo || ngo.status === 'inactive') {
+      return res.status(404).json({ message: 'NGO not found or inactive' });
+    }
 
-    return res.status(201).json({
-      message: "NGO created successfully",
-      data: ngo
+    await ngo.update(req.body);
+    res.json({
+      message: 'NGO updated successfully',
+      ngo
     });
 
   } catch (err) {
-    console.log(err);
-    res.status(500).json({ message: "Error creating NGO" });
+    console.error(err);
+    res.status(500).json({ message: 'Failed to update NGO' });
   }
 };
 
-exports.getNGOs = async (req, res) => {
+// SOFT DELETE NGO
+exports.deleteNgo = async (req, res) => {
   try {
-    const ngos = await NGO.findAll();
-    return res.json(ngos);
+    const ngo = await NGO.findByPk(req.params.id);
+
+    if (!ngo || ngo.status === 'inactive') {
+      return res.status(404).json({ message: 'NGO not found or already inactive' });
+    }
+
+    await ngo.update({ status: 'inactive' });
+    res.json({
+      message: 'NGO deactivated successfully'
+    });
+
   } catch (err) {
-    res.status(500).json({ message: "Error fetching NGOs" });
+    console.error(err);
+    res.status(500).json({ message: 'Failed to delete NGO' });
   }
 };

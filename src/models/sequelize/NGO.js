@@ -10,30 +10,27 @@ const NGO = sequelize.define('NGO', {
 
   name: {
     type: DataTypes.STRING,
-    allowNull: false
+    allowNull: false,
+    unique: true,
+    validate: { notEmpty: true }
   },
 
-  registration_number: {
-    type: DataTypes.STRING,
-    allowNull: true
-  },
-
-  contact_email: {
-    type: DataTypes.STRING,
-    allowNull: true,
-    validate: { isEmail: true }
-  },
-
-  // 🔄 TEMP FIX: allowNull set to true
   phone: {
     type: DataTypes.STRING,
-    allowNull: true   // will make required later
+    allowNull: false,
+    validate: { notEmpty: true }
   },
 
-  // 🔄 TEMP FIX: allowNull set to true
   zone: {
     type: DataTypes.STRING,
-    allowNull: true   // will make required later
+    allowNull: false,
+    validate: { notEmpty: true }
+  },
+
+  status: {
+    type: DataTypes.ENUM('active', 'inactive'),
+    allowNull: false,
+    defaultValue: 'active'
   }
 
 }, {
