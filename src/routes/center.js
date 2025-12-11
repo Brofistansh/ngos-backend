@@ -9,15 +9,16 @@ const roles = require('../middlewares/roleMiddleware');
 router.post(
   '/:ngo_id/centers',
   auth,
-  roles("ngo_admin"),
+  roles("super_admin", "ngo_admin"),
   centerController.createCenter
 );
+
 
 // GET all centers of an NGO
 router.get(
   '/:ngo_id/centers',
   auth,
-  centerController.getCentersByNGO   // ← FIXED
+  centerController.getCentersByNGO   // <-- FIXED
 );
 
 // UPDATE Center
