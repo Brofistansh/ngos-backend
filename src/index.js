@@ -52,7 +52,7 @@ app.use('/api/managers', require('./routes/managerRoutes'));
 // after other protected routes
 app.use('/api/teachers', require('./routes/teacher'));
 app.use('/api/managers/create', require('./routes/managerCreateRoutes'));
-app.use("/api/students", require("./routes/studentRoutes"));
+app.use("/api/students", require("./routes/student"));
 
 
 
