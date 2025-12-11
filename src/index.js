@@ -49,6 +49,9 @@ app.use('/api/donations', require('./routes/donation'));
 app.use('/api/reports/donations', require('./routes/donationReports'));
 app.use('/api/zones', require('./routes/zoneRoutes'));
 app.use('/api/managers', require('./routes/managerRoutes'));
+// after other protected routes
+app.use('/api/teachers', require('./routes/teacher'));
+
 
 // ------------------------------
 // SWAGGER DOCS
