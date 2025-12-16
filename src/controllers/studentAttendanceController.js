@@ -1,10 +1,11 @@
 const { Op } = require("sequelize");
 const StudentAttendance = require("../models/sequelize/StudentAttendance");
+const Student = require("../models/sequelize/Student");
 const Teacher = require("../models/sequelize/Teacher");
 
 /**
  * CREATE STUDENT ATTENDANCE
- * Roles allowed:
+ * Allowed:
  * - super_admin
  * - ngo_admin
  * - center_admin
@@ -12,10 +13,21 @@ const Teacher = require("../models/sequelize/Teacher");
  */
 exports.createAttendance = async (req, res, next) => {
   try {
-    let ngo_id = req.user.ngo_id;
-    let center_id = req.user.center_id;
+    const { student_id, date, status, remarks } = req.body;
 
-    // 👨‍🏫 Teacher context resolution
+    // 1️⃣ Fetch student (SOURCE OF TRUTH)
+    const student = await Student.findByPk(student_id);
+
+    if (!student) {
+      return res.status(404).json({
+        message: "Student not found"
+      });
+    }
+
+    let ngo_id = student.ngo_id;
+    let center_id = student.center_id;
+
+    // 2️⃣ Teacher validation (scope check)
     if (req.user.role === "teacher") {
       const teacher = await Teacher.findOne({
         where: { user_id: req.user.id }
@@ -23,31 +35,29 @@ exports.createAttendance = async (req, res, next) => {
 
       if (!teacher) {
         return res.status(403).json({
-          message: "Teacher is not linked to any center"
+          message: "Teacher profile not found"
         });
       }
 
-      ngo_id = teacher.ngo_id;
-      center_id = teacher.center_id;
+      if (teacher.center_id !== center_id) {
+        return res.status(403).json({
+          message: "Teacher cannot mark attendance for this student"
+        });
+      }
     }
 
-    if (!ngo_id || !center_id) {
-      return res.status(400).json({
-        message: "NGO or Center context missing"
-      });
-    }
-
+    // 3️⃣ Create attendance (ALL REQUIRED FIELDS)
     const attendance = await StudentAttendance.create({
-      student_id: req.body.student_id,
+      student_id,
       ngo_id,
       center_id,
-      date: req.body.date,
-      status: req.body.status,
-      remarks: req.body.remarks || null,
+      date,
+      status,
+      remarks: remarks || null,
       marked_by: req.user.id
     });
 
-    return res.status(201).json(attendance);
+    res.status(201).json(attendance);
   } catch (err) {
     console.error("❌ Student Attendance Create Error:", err);
     next(err);
@@ -56,40 +66,11 @@ exports.createAttendance = async (req, res, next) => {
 
 /**
  * GET STUDENT ATTENDANCE
- * Filters:
- * - student_id
- * - center_id
- * - date
- * - from_date + to_date
  */
 exports.getAttendance = async (req, res, next) => {
   try {
-    const {
-      student_id,
-      center_id,
-      date,
-      from_date,
-      to_date
-    } = req.query;
-
+    const { student_id, center_id, date, from_date, to_date } = req.query;
     const where = {};
-
-    // 🔐 Scope control
-    if (req.user.role === "teacher") {
-      const teacher = await Teacher.findOne({
-        where: { user_id: req.user.id }
-      });
-
-      if (!teacher) {
-        return res.status(403).json({
-          message: "Teacher is not linked to any center"
-        });
-      }
-
-      where.center_id = teacher.center_id;
-    } else if (req.user.center_id) {
-      where.center_id = req.user.center_id;
-    }
 
     if (student_id) where.student_id = student_id;
     if (center_id) where.center_id = center_id;
@@ -99,34 +80,29 @@ exports.getAttendance = async (req, res, next) => {
     }
 
     if (from_date && to_date) {
-      where.date = {
-        [Op.between]: [from_date, to_date]
-      };
+      where.date = { [Op.between]: [from_date, to_date] };
     }
 
-    const records = await StudentAttendance.findAll({
-      where,
-      order: [["date", "DESC"]]
-    });
-
-    res.json(records);
+    res.json(
+      await StudentAttendance.findAll({
+        where,
+        order: [["date", "DESC"]]
+      })
+    );
   } catch (err) {
-    console.error("❌ Student Attendance Fetch Error:", err);
     next(err);
   }
 };
 
 /**
- * UPDATE STUDENT ATTENDANCE
+ * UPDATE ATTENDANCE
  */
 exports.updateAttendance = async (req, res, next) => {
   try {
     const record = await StudentAttendance.findByPk(req.params.id);
 
     if (!record) {
-      return res.status(404).json({
-        message: "Attendance record not found"
-      });
+      return res.status(404).json({ message: "Attendance not found" });
     }
 
     await record.update({
@@ -136,13 +112,12 @@ exports.updateAttendance = async (req, res, next) => {
 
     res.json(record);
   } catch (err) {
-    console.error("❌ Student Attendance Update Error:", err);
     next(err);
   }
 };
 
 /**
- * DELETE STUDENT ATTENDANCE
+ * DELETE ATTENDANCE
  */
 exports.deleteAttendance = async (req, res, next) => {
   try {
@@ -151,14 +126,11 @@ exports.deleteAttendance = async (req, res, next) => {
     });
 
     if (!deleted) {
-      return res.status(404).json({
-        message: "Attendance record not found"
-      });
+      return res.status(404).json({ message: "Attendance not found" });
     }
 
     res.json({ message: "Attendance deleted successfully" });
   } catch (err) {
-    console.error("❌ Student Attendance Delete Error:", err);
     next(err);
   }
 };
