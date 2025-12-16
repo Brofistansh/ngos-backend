@@ -40,9 +40,9 @@ app.use(apiKeyMiddleware);
 app.use('/api/ngos', require('./routes/ngo'));
 app.use('/api/ngos', require('./routes/center'));
 app.use('/api/users', require('./routes/user'));
-app.use('/api/attendance', require('./routes/attendance'));
+// app.use('/api/attendance', require('./routes/attendance'));
 app.use('/api/students', require('./routes/student'));
-app.use('/api/student-attendance', require('./routes/studentAttendance'));
+// app.use('/api/student-attendance', require('./routes/studentAttendance'));
 app.use('/api/reports', require('./routes/report'));
 app.use('/api/donors', require('./routes/donor'));
 app.use('/api/donations', require('./routes/donation'));
@@ -54,6 +54,8 @@ app.use('/api/teachers', require('./routes/teacher'));
 app.use('/api/managers/create', require('./routes/managerCreateRoutes'));
 app.use("/api/students", require("./routes/student"));
 
+app.use("/api/student-attendance", require("./routes/studentAttendance"));
+app.use("/api/teacher-attendance", require("./routes/teacherAttendance"));
 
 
 

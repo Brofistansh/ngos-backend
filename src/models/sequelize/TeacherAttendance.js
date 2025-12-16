@@ -1,8 +1,8 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../../db/postgres");
 
-const StudentAttendance = sequelize.define(
-  "StudentAttendance",
+const TeacherAttendance = sequelize.define(
+  "TeacherAttendance",
   {
     id: {
       type: DataTypes.UUID,
@@ -10,7 +10,7 @@ const StudentAttendance = sequelize.define(
       primaryKey: true
     },
 
-    student_id: {
+    teacher_id: {
       type: DataTypes.UUID,
       allowNull: false
     },
@@ -41,10 +41,10 @@ const StudentAttendance = sequelize.define(
     }
   },
   {
-    tableName: "student_attendance",
+    tableName: "teacher_attendance",
     timestamps: true,
-    indexes: [{ unique: true, fields: ["student_id", "date"] }]
+    indexes: [{ unique: true, fields: ["teacher_id", "date"] }]
   }
 );
 
-module.exports = StudentAttendance;
+module.exports = TeacherAttendance;
