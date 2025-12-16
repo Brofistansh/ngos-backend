@@ -5,9 +5,36 @@ const controller = require("../controllers/studentAttendanceController");
 const auth = require("../middlewares/authMiddleware");
 const roles = require("../middlewares/roleMiddleware");
 
-router.post("/", auth, roles("super_admin", "ngo_admin", "center_admin"), controller.createAttendance);
-router.get("/", auth, roles("super_admin", "ngo_admin", "center_admin"), controller.getAttendance);
-router.put("/:id", auth, roles("super_admin", "ngo_admin", "center_admin"), controller.updateAttendance);
-router.delete("/:id", auth, roles("super_admin", "ngo_admin"), controller.deleteAttendance);
+// CREATE / UPSERT
+router.post(
+  "/",
+  auth,
+  roles("super_admin", "ngo_admin", "center_admin"),
+  controller.createAttendance
+);
+
+// GET ALL + FILTERS
+router.get(
+  "/",
+  auth,
+  roles("super_admin", "ngo_admin", "center_admin"),
+  controller.getAttendance
+);
+
+// UPDATE
+router.put(
+  "/:id",
+  auth,
+  roles("super_admin", "ngo_admin", "center_admin"),
+  controller.updateAttendance
+);
+
+// DELETE
+router.delete(
+  "/:id",
+  auth,
+  roles("super_admin", "ngo_admin"),
+  controller.deleteAttendance
+);
 
 module.exports = router;
