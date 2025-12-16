@@ -1,46 +1,59 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
 
-const studentAttendanceController = require("../controllers/studentAttendanceController");
-const auth = require("../middlewares/authMiddleware");
-const roles = require("../middlewares/roleMiddleware");
+const auth = require('../middlewares/authMiddleware');
+const requireRole = require('../middlewares/roleMiddleware');
+
+const studentAttendanceController = require('../controllers/studentAttendanceController');
 
 /**
- * ALLOWED ROLES:
- * - center_admin
- * - ngo_admin
- * - teacher  ✅
+ * ===============================
+ * STUDENT ATTENDANCE ROUTES
+ * ===============================
  */
 
-// CREATE student attendance
+/**
+ * CREATE student attendance
+ * Roles: teacher, center_admin, ngo_admin, super_admin
+ */
 router.post(
-  "/",
+  '/',
   auth,
-  roles("center_admin", "ngo_admin", "teacher"),
+  requireRole('teacher', 'center_admin', 'ngo_admin', 'super_admin'),
   studentAttendanceController.createAttendance
 );
 
-// GET student attendance (filters supported)
+/**
+ * GET student attendance
+ * Filters:
+ *  - student_id
+ *  - date
+ *  - start_date & end_date
+ */
 router.get(
-  "/",
+  '/',
   auth,
-  roles("center_admin", "ngo_admin", "teacher"),
+  requireRole('teacher', 'center_admin', 'ngo_admin', 'super_admin'),
   studentAttendanceController.getAttendance
 );
 
-// UPDATE attendance
+/**
+ * UPDATE student attendance
+ */
 router.put(
-  "/:id",
+  '/:id',
   auth,
-  roles("center_admin", "ngo_admin", "teacher"),
+  requireRole('teacher', 'center_admin', 'ngo_admin', 'super_admin'),
   studentAttendanceController.updateAttendance
 );
 
-// DELETE attendance (optional — you may restrict this later)
+/**
+ * DELETE student attendance
+ */
 router.delete(
-  "/:id",
+  '/:id',
   auth,
-  roles("center_admin", "ngo_admin"),
+  requireRole('center_admin', 'ngo_admin', 'super_admin'),
   studentAttendanceController.deleteAttendance
 );
 
