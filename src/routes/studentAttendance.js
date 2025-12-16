@@ -1,11 +1,11 @@
 const express = require("express");
 const router = express.Router();
 
-const controller = require("../controllers/studentAttendanceController");
 const auth = require("../middlewares/authMiddleware");
 const roles = require("../middlewares/roleMiddleware");
+const controller = require("../controllers/studentAttendanceController");
 
-// CREATE / UPSERT
+// 🔒 Mark attendance
 router.post(
   "/",
   auth,
@@ -13,7 +13,7 @@ router.post(
   controller.createAttendance
 );
 
-// GET ALL + FILTERS
+// 📥 Get attendance (filters supported)
 router.get(
   "/",
   auth,
@@ -21,7 +21,7 @@ router.get(
   controller.getAttendance
 );
 
-// UPDATE
+// ✏️ Update attendance
 router.put(
   "/:id",
   auth,
@@ -29,7 +29,7 @@ router.put(
   controller.updateAttendance
 );
 
-// DELETE
+// ❌ Delete attendance
 router.delete(
   "/:id",
   auth,

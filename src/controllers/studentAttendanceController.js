@@ -2,69 +2,40 @@ const { Op } = require("sequelize");
 const StudentAttendance = require("../models/sequelize/StudentAttendance");
 const Student = require("../models/sequelize/Student");
 
-exports.createAttendance = async (req, res, next) => {
+const createAttendance = async (req, res, next) => {
   try {
     const { student_id, center_id, date, status, remarks } = req.body;
 
-    // 🚨 VALIDATION (VERY IMPORTANT)
     if (!student_id || !center_id || !date || !status) {
-      return res.status(400).json({
-        message: "student_id, center_id, date, status are required"
-      });
+      return res.status(400).json({ message: "Missing required fields" });
     }
 
-    // 🔎 Fetch student to get ngo_id safely
     const student = await Student.findByPk(student_id);
-
     if (!student) {
       return res.status(404).json({ message: "Student not found" });
     }
 
-    const ngo_id = student.ngo_id;
-
-    // 🧠 UPSERT LOGIC
-    const [attendance, created] = await StudentAttendance.findOrCreate({
-      where: {
-        student_id,
-        center_id,
-        date
-      },
-      defaults: {
-        student_id,
-        center_id,
-        ngo_id,
-        date,
-        status,
-        remarks,
-        marked_by: req.user.id
-      }
+    const attendance = await StudentAttendance.create({
+      student_id,
+      center_id,
+      ngo_id: student.ngo_id,
+      date,
+      status,
+      remarks,
+      marked_by: req.user.id
     });
 
-    if (!created) {
-      await attendance.update({
-        status,
-        remarks,
-        marked_by: req.user.id
-      });
-    }
-
-    res.status(created ? 201 : 200).json(attendance);
-
+    res.status(201).json(attendance);
   } catch (err) {
-    console.error("🔥 Student Attendance Error:", err);
     next(err);
   }
 };
 
-// ===============================
-// GET ATTENDANCE WITH FILTERS
-// ===============================
-exports.getAttendance = async (req, res, next) => {
+const getAttendance = async (req, res, next) => {
   try {
     const { student_id, center_id, date, from, to } = req.query;
 
     const where = {};
-
     if (student_id) where.student_id = student_id;
     if (center_id) where.center_id = center_id;
 
@@ -74,13 +45,43 @@ exports.getAttendance = async (req, res, next) => {
       where.date = date;
     }
 
-    const data = await StudentAttendance.findAll({
+    const records = await StudentAttendance.findAll({
       where,
       order: [["date", "DESC"]]
     });
 
-    res.json({ count: data.length, data });
+    res.json(records);
   } catch (err) {
     next(err);
   }
+};
+
+const updateAttendance = async (req, res, next) => {
+  try {
+    const attendance = await StudentAttendance.findByPk(req.params.id);
+    if (!attendance) {
+      return res.status(404).json({ message: "Attendance not found" });
+    }
+
+    await attendance.update(req.body);
+    res.json(attendance);
+  } catch (err) {
+    next(err);
+  }
+};
+
+const deleteAttendance = async (req, res, next) => {
+  try {
+    await StudentAttendance.destroy({ where: { id: req.params.id } });
+    res.json({ message: "Attendance deleted" });
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = {
+  createAttendance,
+  getAttendance,
+  updateAttendance,
+  deleteAttendance
 };
