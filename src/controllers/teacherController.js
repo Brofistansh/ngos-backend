@@ -1,22 +1,23 @@
 // src/controllers/teacherController.js
+
 const fs = require('fs');
-const path = require('path');
 const bcrypt = require('bcryptjs');
 const { uploadImage } = require('../utils/cloudinary');
-const { sequelize } = require('../db/postgres') || require('../db/postgres'); // keep compatibility
+
 const User = require('../models/sequelize/User');
 const Teacher = require('../models/sequelize/Teacher');
 
-const SALT_ROUNDS = 10;
+const SALT = 10;
 
 /**
- * Create teacher:
- * - create user with role 'teacher'
- * - create teacher profile linking to user.id
- * - supports file upload 'teacher_photo' (form-data)
+ * CREATE TEACHER
+ * - create User (role: teacher)
+ * - create Teacher profile
+ * - handle image upload
  */
 exports.createTeacher = async (req, res) => {
-  const t = await (User.sequelize || require('../db/postgres')).transaction();
+  const t = await User.sequelize.transaction();
+
   try {
     const {
       teacher_name,
@@ -35,78 +36,85 @@ exports.createTeacher = async (req, res) => {
       center_id,
       email,
       password,
+      phone
     } = req.body;
 
     if (!email || !password || !teacher_name || !ngo_id || !center_id) {
       await t.rollback();
-      return res.status(400).json({ message: 'Missing required fields: email, password, teacher_name, ngo_id, center_id' });
+      return res.status(400).json({
+        message: "email, password, teacher_name, ngo_id, center_id are required"
+      });
     }
 
-    // create user
-    const hashed = await bcrypt.hash(password, SALT_ROUNDS);
+    // Hash password
+    const hashed = await bcrypt.hash(password, SALT);
 
+    // Create user
     const user = await User.create({
       name: teacher_name,
       email,
       password: hashed,
-      role: 'teacher',
+      role: "teacher",
       ngo_id,
       center_id,
-      phone: req.body.phone || null
+      phone: phone || null
     }, { transaction: t });
 
-    // upload photo to cloudinary if file present
+
+    // Upload teacher photo if provided
     let photoUrl = null;
     if (req.file) {
-      const uploadRes = await uploadImage(req.file.path, 'ngos/teachers');
-      photoUrl = uploadRes.secure_url;
-      // delete temp file
-      try { fs.unlinkSync(req.file.path); } catch(e){/* ignore */ }
+      const upload = await uploadImage(req.file.path, "teachers");
+      photoUrl = upload.secure_url;
+      fs.unlinkSync(req.file.path);
     }
 
+    // Create teacher profile
     const teacher = await Teacher.create({
       user_id: user.id,
       teacher_name,
-      date_of_joining: date_of_joining || null,
+      date_of_joining,
       father_name,
       mother_name,
       qualification,
       address,
-      date_of_leaving: date_of_leaving || null,
+      date_of_leaving,
       honorarium,
       account_no,
       bank_name,
       ifsc_code,
-      teacher_photo: photoUrl,
       aadhar_card_no,
+      teacher_photo: photoUrl,
       ngo_id,
       center_id,
-      status: 'active'
+      status: "active"
     }, { transaction: t });
 
     await t.commit();
 
-    return res.status(201).json({
+    res.status(201).json({
       success: true,
-      message: 'Teacher created',
-      data: { userId: user.id, teacher }
+      message: "Teacher created successfully",
+      user,
+      teacher
     });
 
   } catch (err) {
     await t.rollback();
-    console.error('createTeacher error', err);
-    // If email duplicate, User model unique constraint will throw
-    if (err.name === 'SequelizeUniqueConstraintError') {
-      return res.status(409).json({ message: 'Email already in use' });
-    }
-    return res.status(500).json({ message: 'Failed to create teacher', error: err.message });
+    console.error("CREATE TEACHER ERROR:", err);
+    res.status(500).json({ message: "Failed to create teacher", error: err.message });
   }
 };
 
 
+
+/**
+ * GET ALL TEACHERS
+ */
 exports.listTeachers = async (req, res) => {
   try {
     const { ngo_id, center_id, status } = req.query;
+
     const where = {};
     if (ngo_id) where.ngo_id = ngo_id;
     if (center_id) where.center_id = center_id;
@@ -114,100 +122,133 @@ exports.listTeachers = async (req, res) => {
 
     const teachers = await Teacher.findAll({
       where,
-      order: [['teacher_name', 'ASC']]
+      order: [["teacher_name", "ASC"]]
     });
 
-    return res.json({ success: true, count: teachers.length, data: teachers });
+    res.json({
+      success: true,
+      count: teachers.length,
+      data: teachers
+    });
+
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ message: 'Server error' });
+    console.error("LIST TEACHERS ERROR:", err);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
+
+
+/**
+ * GET TEACHER BY ID
+ */
 exports.getTeacher = async (req, res) => {
   try {
     const { id } = req.params;
+
     const teacher = await Teacher.findByPk(id);
-    if (!teacher) return res.status(404).json({ message: 'Teacher not found' });
+    if (!teacher) return res.status(404).json({ message: "Teacher not found" });
 
-    // optionally include user record
-    const user = await User.findByPk(teacher.user_id, { attributes: ['id','email','name','role','status'] });
+    const user = await User.findByPk(teacher.user_id, {
+      attributes: ["id", "email", "name", "role", "status"]
+    });
 
-    return res.json({ success: true, data: { teacher, user } });
+    res.json({
+      success: true,
+      data: { teacher, user }
+    });
+
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ message: 'Server error' });
+    console.error("GET TEACHER ERROR:", err);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
+
+
+/**
+ * UPDATE TEACHER
+ */
 exports.updateTeacher = async (req, res) => {
   try {
-    const { id } = req.params; // teacher id
-    const teacher = await Teacher.findByPk(id);
-    if (!teacher) return res.status(404).json({ message: 'Teacher not found' });
+    const { id } = req.params;
 
-    // if file uploaded, upload to cloudinary
+    const teacher = await Teacher.findByPk(id);
+    if (!teacher) return res.status(404).json({ message: "Teacher not found" });
+
+    // Upload new photo
     if (req.file) {
-      try {
-        const uploadRes = await uploadImage(req.file.path, 'ngos/teachers');
-        teacher.teacher_photo = uploadRes.secure_url;
-        try { fs.unlinkSync(req.file.path); } catch(e){/* ignore */ }
-      } catch (e) {
-        console.error('Failed to upload photo', e);
-      }
+      const upload = await uploadImage(req.file.path, "teachers");
+      teacher.teacher_photo = upload.secure_url;
+      fs.unlinkSync(req.file.path);
     }
 
-    // update profile fields
-    const updatableFields = [
-      'teacher_name','date_of_joining','father_name','mother_name','qualification','address',
-      'date_of_leaving','honorarium','account_no','bank_name','ifsc_code','aadhar_card_no',
-      'ngo_id','center_id','status'
+    // Updatable teacher fields
+    const fields = [
+      "teacher_name", "date_of_joining", "father_name", "mother_name",
+      "qualification", "address", "date_of_leaving", "honorarium",
+      "account_no", "bank_name", "ifsc_code", "aadhar_card_no",
+      "ngo_id", "center_id", "status"
     ];
 
-    updatableFields.forEach(f => {
+    fields.forEach(f => {
       if (req.body[f] !== undefined) teacher[f] = req.body[f];
     });
 
     await teacher.save();
 
-    // if email/password update required, update user too
+
+    // Update linked user for email/password
     if (req.body.email || req.body.password) {
       const user = await User.findByPk(teacher.user_id);
+
       if (req.body.email) user.email = req.body.email;
-      if (req.body.password) {
-        const hashed = await bcrypt.hash(req.body.password, SALT_ROUNDS);
-        user.password = hashed;
-      }
+      if (req.body.password)
+        user.password = await bcrypt.hash(req.body.password, SALT);
+
       await user.save();
     }
 
-    return res.json({ success: true, message: 'Teacher updated', data: teacher });
+    res.json({
+      success: true,
+      message: "Teacher updated successfully",
+      teacher
+    });
+
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ message: 'Server error' });
+    console.error("UPDATE TEACHER ERROR:", err);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
+
+
+/**
+ * DELETE TEACHER (Soft delete)
+ */
 exports.deleteTeacher = async (req, res) => {
   try {
     const { id } = req.params;
-    const teacher = await Teacher.findByPk(id);
-    if (!teacher) return res.status(404).json({ message: 'Teacher not found' });
 
-    // soft delete
-    teacher.status = 'inactive';
+    const teacher = await Teacher.findByPk(id);
+    if (!teacher) return res.status(404).json({ message: "Teacher not found" });
+
+    teacher.status = "inactive";
     await teacher.save();
 
-    // also update user status optionally
     const user = await User.findByPk(teacher.user_id);
     if (user) {
-      user.status = 'inactive';
+      user.status = "inactive";
       await user.save();
     }
 
-    return res.json({ success: true, message: 'Teacher deactivated' });
+    res.json({
+      success: true,
+      message: "Teacher deleted (soft)"
+    });
+
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ message: 'Server error' });
+    console.error("DELETE ERROR:", err);
+    res.status(500).json({ message: "Server error" });
   }
 };
