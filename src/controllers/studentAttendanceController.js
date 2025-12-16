@@ -2,65 +2,110 @@ const StudentAttendance = require('../models/sequelize/StudentAttendance');
 const Student = require('../models/sequelize/Student');
 
 /**
- * CREATE Student Attendance
- * Teacher / Center Admin can mark attendance
+ * CREATE student attendance
  */
 exports.createAttendance = async (req, res) => {
   try {
     const { student_id, center_id, date, status, remarks } = req.body;
+    const user = req.user;
 
-    const user = req.user; // from auth middleware
-
-    // ✅ Allow these roles
-    if (!['teacher', 'center_admin', 'ngo_admin', 'super_admin'].includes(user.role)) {
-      return res.status(403).json({ message: 'Forbidden: Insufficient permissions' });
-    }
-
-    // ✅ Validate required fields
-    if (!student_id || !center_id || !date || !status) {
-      return res.status(400).json({ message: 'Missing required fields' });
-    }
-
-    // ✅ Fetch student & validate NGO + Center
     const student = await Student.findOne({
       where: {
         id: student_id,
         ngo_id: user.ngo_id,
-        center_id: center_id
-      }
+      },
     });
 
     if (!student) {
       return res.status(404).json({ message: 'Student not found in your NGO' });
     }
 
-    // ✅ Prevent duplicate attendance for same day
-    const alreadyMarked = await StudentAttendance.findOne({
-      where: { student_id, date }
-    });
-
-    if (alreadyMarked) {
-      return res.status(409).json({ message: 'Attendance already marked for this date' });
-    }
-
-    // ✅ CREATE attendance (FIX: ngo_id added)
     const attendance = await StudentAttendance.create({
       student_id,
       center_id,
-      ngo_id: user.ngo_id,        // 🔥 FIX
+      ngo_id: user.ngo_id,
       date,
       status,
-      remarks: remarks || null,
-      marked_by: user.id
+      remarks,
+      marked_by: user.id,
     });
 
-    return res.status(201).json({
-      message: 'Student attendance marked successfully',
-      attendance
+    res.status(201).json(attendance);
+  } catch (err) {
+    console.error('❌ Student Attendance Create Error:', err);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+/**
+ * GET student attendance
+ */
+exports.getAttendance = async (req, res) => {
+  try {
+    const { student_id, date, start_date, end_date } = req.query;
+
+    const where = {
+      ngo_id: req.user.ngo_id,
+    };
+
+    if (student_id) where.student_id = student_id;
+    if (date) where.date = date;
+    if (start_date && end_date) {
+      where.date = { $between: [start_date, end_date] };
+    }
+
+    const records = await StudentAttendance.findAll({ where });
+    res.json(records);
+  } catch (err) {
+    console.error('❌ Get Attendance Error:', err);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+/**
+ * UPDATE attendance
+ */
+exports.updateAttendance = async (req, res) => {
+  try {
+    const attendance = await StudentAttendance.findOne({
+      where: {
+        id: req.params.id,
+        ngo_id: req.user.ngo_id,
+      },
     });
 
-  } catch (error) {
-    console.error('❌ Student Attendance Create Error:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    if (!attendance) {
+      return res.status(404).json({ message: 'Attendance not found' });
+    }
+
+    await attendance.update(req.body);
+    res.json(attendance);
+  } catch (err) {
+    console.error('❌ Update Attendance Error:', err);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+/**
+ * DELETE attendance
+ */
+exports.deleteAttendance = async (req, res) => {
+  try {
+    const attendance = await StudentAttendance.findOne({
+      where: {
+        id: req.params.id,
+        ngo_id: req.user.ngo_id,
+      },
+    });
+
+    if (!attendance) {
+      return res.status(404).json({ message: 'Attendance not found' });
+    }
+
+    await attendance.destroy();
+    res.json({ message: 'Attendance deleted successfully' });
+  } catch (err) {
+    console.error('❌ Delete Attendance Error:', err);
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
