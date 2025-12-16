@@ -1,40 +1,47 @@
 const express = require("express");
 const router = express.Router();
 
+const studentAttendanceController = require("../controllers/studentAttendanceController");
 const auth = require("../middlewares/authMiddleware");
 const roles = require("../middlewares/roleMiddleware");
-const controller = require("../controllers/studentAttendanceController");
 
-// 🔒 Mark attendance
+/**
+ * ALLOWED ROLES:
+ * - center_admin
+ * - ngo_admin
+ * - teacher  ✅
+ */
+
+// CREATE student attendance
 router.post(
   "/",
   auth,
-  roles("super_admin", "ngo_admin", "center_admin"),
-  controller.createAttendance
+  roles("center_admin", "ngo_admin", "teacher"),
+  studentAttendanceController.createAttendance
 );
 
-// 📥 Get attendance (filters supported)
+// GET student attendance (filters supported)
 router.get(
   "/",
   auth,
-  roles("super_admin", "ngo_admin", "center_admin"),
-  controller.getAttendance
+  roles("center_admin", "ngo_admin", "teacher"),
+  studentAttendanceController.getAttendance
 );
 
-// ✏️ Update attendance
+// UPDATE attendance
 router.put(
   "/:id",
   auth,
-  roles("super_admin", "ngo_admin", "center_admin"),
-  controller.updateAttendance
+  roles("center_admin", "ngo_admin", "teacher"),
+  studentAttendanceController.updateAttendance
 );
 
-// ❌ Delete attendance
+// DELETE attendance (optional — you may restrict this later)
 router.delete(
   "/:id",
   auth,
-  roles("super_admin", "ngo_admin"),
-  controller.deleteAttendance
+  roles("center_admin", "ngo_admin"),
+  studentAttendanceController.deleteAttendance
 );
 
 module.exports = router;
