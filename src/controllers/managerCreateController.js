@@ -1,5 +1,3 @@
-// src/controllers/managerCreateController.js
-
 const bcrypt = require('bcryptjs');
 const User = require('../models/sequelize/User');
 const ManagerDetails = require('../models/sequelize/ManagerDetails');
@@ -31,7 +29,7 @@ exports.createCenterManager = async (req, res) => {
       manager_photo
     } = req.body;
 
-    // hash password
+    // Hash password
     const hashed = await bcrypt.hash(password, 10);
 
     // Create user login
@@ -41,10 +39,11 @@ exports.createCenterManager = async (req, res) => {
       password: hashed,
       role: "center_admin",
       ngo_id,
-      center_id
+      center_id,
+      status: "active"
     });
 
-    // Create manager details
+    // Create ManagerDetails entry
     const details = await ManagerDetails.create({
       user_id: user.id,
       father_name,
@@ -75,7 +74,7 @@ exports.createCenterManager = async (req, res) => {
 
 
 /**
- * GET ALL MANAGERS (+ optional ngo/center filtering)
+ * GET ALL MANAGERS (with optional filters)
  */
 exports.getManagers = async (req, res) => {
   try {
@@ -91,7 +90,7 @@ exports.getManagers = async (req, res) => {
 
     const managers = await User.findAll({
       where,
-      include: [{ model: ManagerDetails }],
+      include: [{ model: ManagerDetails, as: "manager_details" }],
       order: [["createdAt", "DESC"]]
     });
 
@@ -108,7 +107,7 @@ exports.getManagers = async (req, res) => {
 
 
 /**
- * GET MANAGER BY USER ID
+ * GET MANAGER BY ID
  */
 exports.getManagerById = async (req, res) => {
   try {
@@ -116,12 +115,11 @@ exports.getManagerById = async (req, res) => {
 
     const manager = await User.findOne({
       where: { id, role: "center_admin" },
-      include: [{ model: ManagerDetails }]
+      include: [{ model: ManagerDetails, as: "manager_details" }]
     });
 
-    if (!manager) {
+    if (!manager)
       return res.status(404).json({ message: "Manager not found" });
-    }
 
     return res.json(manager);
 
@@ -133,7 +131,7 @@ exports.getManagerById = async (req, res) => {
 
 
 /**
- * UPDATE MANAGER (User + ManagerDetails)
+ * UPDATE MANAGER (updates both User + ManagerDetails)
  */
 exports.updateManager = async (req, res) => {
   try {
@@ -141,18 +139,17 @@ exports.updateManager = async (req, res) => {
 
     const manager = await User.findOne({
       where: { id, role: "center_admin" },
-      include: [{ model: ManagerDetails }]
+      include: [{ model: ManagerDetails, as: "manager_details" }]
     });
 
-    if (!manager) {
+    if (!manager)
       return res.status(404).json({ message: "Manager not found" });
-    }
 
-    // Update user (name, email, center_id, etc.)
+    // Update User table
     await manager.update(req.body);
 
-    // Update details
-    await manager.ManagerDetail.update(req.body);
+    // Update ManagerDetails table
+    await manager.manager_details.update(req.body);
 
     return res.json({
       message: "Manager updated successfully",
@@ -167,7 +164,7 @@ exports.updateManager = async (req, res) => {
 
 
 /**
- * SOFT DELETE MANAGER (User.status = inactive)
+ * SOFT DELETE MANAGER
  */
 exports.deleteManager = async (req, res) => {
   try {
@@ -177,9 +174,8 @@ exports.deleteManager = async (req, res) => {
       where: { id, role: "center_admin" }
     });
 
-    if (!manager) {
+    if (!manager)
       return res.status(404).json({ message: "Manager not found" });
-    }
 
     await manager.update({ status: "inactive" });
 

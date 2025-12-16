@@ -1,5 +1,3 @@
-// src/routes/managerCreateRoutes.js
-
 const express = require('express');
 const router = express.Router();
 
@@ -8,7 +6,7 @@ const roles = require('../middlewares/roleMiddleware');
 
 const managerController = require('../controllers/managerCreateController');
 
-// Only super_admin + ngo_admin allowed for managers
+// Only super_admin + ngo_admin allowed
 router.post('/', auth, roles("super_admin", "ngo_admin"), managerController.createCenterManager);
 
 router.get('/', auth, roles("super_admin", "ngo_admin"), managerController.getManagers);

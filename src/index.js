@@ -48,11 +48,12 @@ app.use('/api/donors', require('./routes/donor'));
 app.use('/api/donations', require('./routes/donation'));
 app.use('/api/reports/donations', require('./routes/donationReports'));
 app.use('/api/zones', require('./routes/zoneRoutes'));
-app.use('/api/managers', require('./routes/managerRoutes'));
+
 // after other protected routes
 app.use('/api/teachers', require('./routes/teacher'));
 app.use('/api/managers/create', require('./routes/managerCreateRoutes'));
 app.use("/api/students", require("./routes/student"));
+
 
 
 
