@@ -1,136 +1,173 @@
-const { Op } = require("sequelize");
-const StudentAttendance = require("../models/sequelize/StudentAttendance");
-const Student = require("../models/sequelize/Student");
-const Teacher = require("../models/sequelize/Teacher");
+const StudentAttendance = require('../models/sequelize/StudentAttendance');
+const Student = require('../models/sequelize/Student');
+const Center = require('../models/sequelize/Center');
 
 /**
- * CREATE STUDENT ATTENDANCE
- * Allowed:
- * - super_admin
- * - ngo_admin
- * - center_admin
- * - teacher
+ * CREATE Student Attendance
+ * Teacher / Center Admin / Manager can mark attendance
  */
-exports.createAttendance = async (req, res, next) => {
+exports.createAttendance = async (req, res) => {
   try {
-    const { student_id, date, status, remarks } = req.body;
+    const { student_id, center_id, date, status, remarks } = req.body;
 
-    // 1️⃣ Fetch student (SOURCE OF TRUTH)
-    const student = await Student.findByPk(student_id);
+    // 🔒 Auth payload from JWT
+    const { id: user_id, role, ngo_id } = req.user;
+
+    // ---- VALIDATIONS ----
+    if (!student_id || !center_id || !date || !status) {
+      return res.status(400).json({
+        message: 'student_id, center_id, date and status are required'
+      });
+    }
+
+    if (!ngo_id) {
+      return res.status(400).json({
+        message: 'Invalid user: NGO not found in token'
+      });
+    }
+
+    // ---- ROLE CHECK ----
+    const allowedRoles = ['teacher', 'center_admin', 'ngo_admin', 'super_admin'];
+    if (!allowedRoles.includes(role)) {
+      return res.status(403).json({
+        message: 'Forbidden: You cannot mark student attendance'
+      });
+    }
+
+    // ---- VERIFY STUDENT ----
+    const student = await Student.findOne({
+      where: { id: student_id, ngo_id }
+    });
 
     if (!student) {
       return res.status(404).json({
-        message: "Student not found"
+        message: 'Student not found in your NGO'
       });
     }
 
-    let ngo_id = student.ngo_id;
-    let center_id = student.center_id;
+    // ---- VERIFY CENTER ----
+    const center = await Center.findOne({
+      where: { id: center_id, ngo_id }
+    });
 
-    // 2️⃣ Teacher validation (scope check)
-    if (req.user.role === "teacher") {
-      const teacher = await Teacher.findOne({
-        where: { user_id: req.user.id }
+    if (!center) {
+      return res.status(404).json({
+        message: 'Center not found in your NGO'
       });
-
-      if (!teacher) {
-        return res.status(403).json({
-          message: "Teacher profile not found"
-        });
-      }
-
-      if (teacher.center_id !== center_id) {
-        return res.status(403).json({
-          message: "Teacher cannot mark attendance for this student"
-        });
-      }
     }
 
-    // 3️⃣ Create attendance (ALL REQUIRED FIELDS)
+    // ---- CREATE ATTENDANCE ----
     const attendance = await StudentAttendance.create({
       student_id,
-      ngo_id,
       center_id,
+      ngo_id,              // ✅ FIXED: this was missing
       date,
       status,
-      remarks: remarks || null,
-      marked_by: req.user.id
+      remarks,
+      marked_by: user_id   // teacher / admin who marked
     });
 
-    res.status(201).json(attendance);
-  } catch (err) {
-    console.error("❌ Student Attendance Create Error:", err);
-    next(err);
+    return res.status(201).json({
+      message: 'Student attendance marked successfully',
+      attendance
+    });
+
+  } catch (error) {
+    console.error('❌ Student Attendance Create Error:', error);
+    return res.status(500).json({
+      message: 'Internal server error'
+    });
   }
 };
 
 /**
- * GET STUDENT ATTENDANCE
+ * GET Student Attendance (filters supported)
+ * ?student_id
+ * ?date
+ * ?start_date & end_date
  */
-exports.getAttendance = async (req, res, next) => {
+exports.getAttendance = async (req, res) => {
   try {
-    const { student_id, center_id, date, from_date, to_date } = req.query;
-    const where = {};
+    const { student_id, date, start_date, end_date } = req.query;
+    const { ngo_id } = req.user;
+
+    const where = { ngo_id };
 
     if (student_id) where.student_id = student_id;
-    if (center_id) where.center_id = center_id;
-
-    if (date) {
-      where.date = date;
+    if (date) where.date = date;
+    if (start_date && end_date) {
+      where.date = {
+        $between: [start_date, end_date]
+      };
     }
 
-    if (from_date && to_date) {
-      where.date = { [Op.between]: [from_date, to_date] };
-    }
+    const records = await StudentAttendance.findAll({
+      where,
+      order: [['date', 'DESC']]
+    });
 
-    res.json(
-      await StudentAttendance.findAll({
-        where,
-        order: [["date", "DESC"]]
-      })
-    );
-  } catch (err) {
-    next(err);
+    return res.json({ records });
+
+  } catch (error) {
+    console.error('❌ Get Student Attendance Error:', error);
+    return res.status(500).json({ message: 'Internal server error' });
   }
 };
 
 /**
- * UPDATE ATTENDANCE
+ * UPDATE Student Attendance
  */
-exports.updateAttendance = async (req, res, next) => {
+exports.updateAttendance = async (req, res) => {
   try {
-    const record = await StudentAttendance.findByPk(req.params.id);
+    const { id } = req.params;
+    const { status, remarks } = req.body;
+    const { ngo_id } = req.user;
 
-    if (!record) {
-      return res.status(404).json({ message: "Attendance not found" });
-    }
-
-    await record.update({
-      status: req.body.status,
-      remarks: req.body.remarks
+    const attendance = await StudentAttendance.findOne({
+      where: { id, ngo_id }
     });
 
-    res.json(record);
-  } catch (err) {
-    next(err);
+    if (!attendance) {
+      return res.status(404).json({ message: 'Attendance record not found' });
+    }
+
+    attendance.status = status ?? attendance.status;
+    attendance.remarks = remarks ?? attendance.remarks;
+    await attendance.save();
+
+    return res.json({
+      message: 'Attendance updated successfully',
+      attendance
+    });
+
+  } catch (error) {
+    console.error('❌ Update Student Attendance Error:', error);
+    return res.status(500).json({ message: 'Internal server error' });
   }
 };
 
 /**
- * DELETE ATTENDANCE
+ * DELETE Student Attendance
  */
-exports.deleteAttendance = async (req, res, next) => {
+exports.deleteAttendance = async (req, res) => {
   try {
-    const deleted = await StudentAttendance.destroy({
-      where: { id: req.params.id }
+    const { id } = req.params;
+    const { ngo_id } = req.user;
+
+    const attendance = await StudentAttendance.findOne({
+      where: { id, ngo_id }
     });
 
-    if (!deleted) {
-      return res.status(404).json({ message: "Attendance not found" });
+    if (!attendance) {
+      return res.status(404).json({ message: 'Attendance record not found' });
     }
 
-    res.json({ message: "Attendance deleted successfully" });
-  } catch (err) {
-    next(err);
+    await attendance.destroy();
+
+    return res.json({ message: 'Attendance deleted successfully' });
+
+  } catch (error) {
+    console.error('❌ Delete Student Attendance Error:', error);
+    return res.status(500).json({ message: 'Internal server error' });
   }
 };
