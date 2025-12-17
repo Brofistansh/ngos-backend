@@ -59,6 +59,8 @@ app.use('/api/zones', require('./routes/zoneRoutes'));
 const studentTimesheetRoutes = require("./routes/studentTimesheet");
 app.use("/api/student-timesheet", studentTimesheetRoutes);
 
+app.use("/api/teacher-timesheet", require("./routes/teacherTimesheet"));
+
 // ------------------------------
 // SWAGGER DOCS
 // ------------------------------
