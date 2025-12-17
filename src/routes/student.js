@@ -41,5 +41,5 @@ router.delete(
   roles(...allowedRoles),
   studentController.deleteStudent
 );
-
+router.get('/:id', getStudentById);
 module.exports = router;
