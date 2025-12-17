@@ -9,9 +9,10 @@ const roles = require("../middlewares/roleMiddleware");
 const multer = require("multer");
 const upload = multer({ dest: "uploads/" });
 
-// SUPER ADMIN + NGO ADMIN + CENTER ADMIN can manage students
+// Roles allowed to manage students
 const allowedRoles = ["super_admin", "ngo_admin", "center_admin"];
 
+// CREATE student
 router.post(
   "/",
   auth,
@@ -20,6 +21,7 @@ router.post(
   studentController.createStudent
 );
 
+// GET all students
 router.get(
   "/",
   auth,
@@ -27,6 +29,15 @@ router.get(
   studentController.getStudents
 );
 
+// GET student by ID ✅ FIXED
+router.get(
+  "/:id",
+  auth,
+  roles(...allowedRoles),
+  studentController.getStudentById
+);
+
+// UPDATE student
 router.put(
   "/:id",
   auth,
@@ -35,11 +46,12 @@ router.put(
   studentController.updateStudent
 );
 
+// DELETE (soft delete)
 router.delete(
   "/:id",
   auth,
   roles(...allowedRoles),
   studentController.deleteStudent
 );
-router.get('/:id', getStudentById);
+
 module.exports = router;
