@@ -5,61 +5,62 @@ module.exports = (sequelize, DataTypes) => {
       id: {
         type: DataTypes.UUID,
         defaultValue: DataTypes.UUIDV4,
-        primaryKey: true
+        primaryKey: true,
       },
 
       student_id: {
         type: DataTypes.UUID,
-        allowNull: false
+        allowNull: false,
       },
 
       ngo_id: {
         type: DataTypes.UUID,
-        allowNull: false
+        allowNull: false,
       },
 
       center_id: {
         type: DataTypes.UUID,
-        allowNull: false
+        allowNull: false,
       },
 
       date: {
         type: DataTypes.DATEONLY,
-        allowNull: false
+        allowNull: false,
       },
 
       attendance: {
-        type: DataTypes.STRING,
-        allowNull: false // present / absent
+        type: DataTypes.ENUM("present", "absent"),
+        allowNull: false,
       },
 
       class: {
         type: DataTypes.STRING,
-        allowNull: true
+        allowNull: false,
       },
 
       subjects: {
         type: DataTypes.STRING,
-        allowNull: true
+        allowNull: false,
       },
 
       topics_covered: {
         type: DataTypes.TEXT,
-        allowNull: true
+        allowNull: false,
       },
 
       quiz_percentage: {
         type: DataTypes.STRING,
-        allowNull: true
+        allowNull: true,
       },
 
       level: {
         type: DataTypes.STRING,
-        allowNull: true // OPTIONAL (as requested)
-      }
+        allowNull: true, // ✅ optional as you wanted
+      },
     },
     {
-      tableName: "student_timesheets"
+      tableName: "student_timesheets",
+      timestamps: true,
     }
   );
 

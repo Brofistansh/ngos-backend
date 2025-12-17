@@ -15,7 +15,7 @@ app.use(helmet());
 app.use(morgan('dev'));
 
 // ------------------------------
-// PUBLIC ROUTES (NO API KEY REQUIRED)
+// PUBLIC ROUTES
 // ------------------------------
 app.get('/', (req, res) => {
   res.json({ status: "OK", message: "NGO Backend is Running 🔥" });
@@ -25,7 +25,7 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });
 });
 
-// Auth routes MUST be public (no API key)
+// Auth routes (NO API key)
 app.use('/auth', require('./routes/auth'));
 
 // ------------------------------
@@ -40,28 +40,24 @@ app.use(apiKeyMiddleware);
 app.use('/api/ngos', require('./routes/ngo'));
 app.use('/api/ngos', require('./routes/center'));
 app.use('/api/users', require('./routes/user'));
-// app.use('/api/attendance', require('./routes/attendance'));
-app.use('/api/students', require('./routes/student'));
-// app.use('/api/student-attendance', require('./routes/studentAttendance'));
-app.use('/api/reports', require('./routes/report'));
+
+app.use('/api/students', require('./routes/student')); // ✅ ONLY ONCE
+
+app.use('/api/student-attendance', require('./routes/studentAttendance'));
+app.use('/api/teacher-attendance', require('./routes/teacherAttendance'));
+
+app.use('/api/teachers', require('./routes/teacher'));
+app.use('/api/managers/create', require('./routes/managerCreateRoutes'));
+
 app.use('/api/donors', require('./routes/donor'));
 app.use('/api/donations', require('./routes/donation'));
+app.use('/api/reports', require('./routes/report'));
 app.use('/api/reports/donations', require('./routes/donationReports'));
 app.use('/api/zones', require('./routes/zoneRoutes'));
 
-// after other protected routes
-app.use('/api/teachers', require('./routes/teacher'));
-app.use('/api/managers/create', require('./routes/managerCreateRoutes'));
-app.use("/api/students", require("./routes/student"));
-
-app.use("/api/student-attendance", require("./routes/studentAttendance"));
-app.use("/api/teacher-attendance", require("./routes/teacherAttendance"));
-
+// ✅ STUDENT TIMESHEET (YOUR NEW FEATURE)
 const studentTimesheetRoutes = require("./routes/studentTimesheet");
-
 app.use("/api/student-timesheet", studentTimesheetRoutes);
-
-
 
 // ------------------------------
 // SWAGGER DOCS
@@ -80,10 +76,8 @@ const sequelize = require('./db/postgres');
     await sequelize.authenticate();
     console.log("🟢 PostgreSQL Connected");
 
-    // FINAL PRODUCTION DB SYNC
     await sequelize.sync();
     console.log("🟢 Database synced without alter");
-
   } catch (error) {
     console.error("❌ Database Sync Error:", error.message);
   }
