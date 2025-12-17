@@ -1,7 +1,5 @@
-// src/controllers/studentTimesheetController.js
-
-const StudentTimesheet = require("../models/sequelize/StudentTimesheet");
-const Student = require("../models/sequelize/Student");
+const StudentTimesheet = require("../models/sequelize/StudentTimeSheet.js");
+const Student = require("../models/sequelize/Student.js");
 
 exports.createStudentTimesheet = async (req, res) => {
   try {
@@ -16,13 +14,12 @@ exports.createStudentTimesheet = async (req, res) => {
       level
     } = req.body;
 
-    // 1. Validate student
+    // Validate student
     const student = await Student.findByPk(student_id);
     if (!student) {
       return res.status(404).json({ message: "Student not found" });
     }
 
-    // 2. Create timesheet
     const timesheet = await StudentTimesheet.create({
       student_id,
       ngo_id: student.ngo_id,
@@ -33,7 +30,7 @@ exports.createStudentTimesheet = async (req, res) => {
       subjects,
       topics_covered,
       quiz_percentage,
-      level: level || null // NOT mandatory
+      level: level || null
     });
 
     return res.status(201).json({

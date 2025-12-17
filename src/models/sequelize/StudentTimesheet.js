@@ -57,7 +57,7 @@ const StudentTimesheet = sequelize.define(
 
     level: {
       type: DataTypes.STRING,
-      allowNull: true, // NOT mandatory (as you wanted)
+      allowNull: true,
     },
   },
   {
@@ -66,4 +66,4 @@ const StudentTimesheet = sequelize.define(
   }
 );
 
-module.exports = StudentTimesheet; // ✅ THIS LINE IS CRITICAL
+module.exports = StudentTimesheet;
