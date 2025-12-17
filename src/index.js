@@ -57,6 +57,9 @@ app.use("/api/students", require("./routes/student"));
 app.use("/api/student-attendance", require("./routes/studentAttendance"));
 app.use("/api/teacher-attendance", require("./routes/teacherAttendance"));
 
+const studentTimesheetRoutes = require("./routes/studentTimesheet");
+
+app.use("/api/student-timesheet", studentTimesheetRoutes);
 
 
 

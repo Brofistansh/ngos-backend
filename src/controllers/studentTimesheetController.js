@@ -11,12 +11,10 @@ exports.createStudentTimesheet = async (req, res) => {
       subjects,
       topics_covered,
       quiz_percentage,
-      level,
+      level
     } = req.body;
 
-    const teacher = req.user;
-
-    // 1. Validate student exists
+    // 1. Validate student
     const student = await Student.findByPk(student_id);
     if (!student) {
       return res.status(404).json({ message: "Student not found" });
@@ -25,24 +23,23 @@ exports.createStudentTimesheet = async (req, res) => {
     // 2. Create timesheet
     const timesheet = await StudentTimesheet.create({
       student_id,
-      teacher_id: teacher.id,
-      center_id: teacher.center_id,
-      ngo_id: teacher.ngo_id,
+      ngo_id: student.ngo_id,
+      center_id: student.center_id,
       date,
       attendance,
       class: className,
       subjects,
       topics_covered,
       quiz_percentage,
-      level, // optional
+      level: level || null // optional
     });
 
     res.status(201).json({
       message: "Student timesheet created successfully",
-      data: timesheet,
+      data: timesheet
     });
-  } catch (err) {
-    console.error("Create Student Timesheet Error:", err);
+  } catch (error) {
+    console.error("Student Timesheet Error:", error);
     res.status(500).json({ message: "Server error" });
   }
 };

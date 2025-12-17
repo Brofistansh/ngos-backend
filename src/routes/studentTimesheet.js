@@ -4,10 +4,10 @@ const router = express.Router();
 const auth = require("../middlewares/authMiddleware");
 const roles = require("../middlewares/roleMiddleware");
 const {
-  createStudentTimesheet,
+  createStudentTimesheet
 } = require("../controllers/studentTimesheetController");
 
-// ONLY teacher can create
+// ONLY CREATE — ONLY TEACHER
 router.post(
   "/",
   auth,
