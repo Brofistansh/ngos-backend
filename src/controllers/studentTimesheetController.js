@@ -1,4 +1,7 @@
-const { StudentTimesheet, Student } = require("../models/sequelize");
+// src/controllers/studentTimesheetController.js
+
+const StudentTimesheet = require("../models/sequelize/StudentTimesheet");
+const Student = require("../models/sequelize/Student");
 
 exports.createStudentTimesheet = async (req, res) => {
   try {
@@ -10,14 +13,16 @@ exports.createStudentTimesheet = async (req, res) => {
       subjects,
       topics_covered,
       quiz_percentage,
-      level,
+      level
     } = req.body;
 
+    // 1. Validate student
     const student = await Student.findByPk(student_id);
     if (!student) {
       return res.status(404).json({ message: "Student not found" });
     }
 
+    // 2. Create timesheet
     const timesheet = await StudentTimesheet.create({
       student_id,
       ngo_id: student.ngo_id,
@@ -28,15 +33,16 @@ exports.createStudentTimesheet = async (req, res) => {
       subjects,
       topics_covered,
       quiz_percentage,
-      level,
+      level: level || null // NOT mandatory
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       message: "Student timesheet created successfully",
-      data: timesheet,
+      data: timesheet
     });
-  } catch (err) {
-    console.error("Student Timesheet Error:", err);
-    res.status(500).json({ message: "Server error" });
+
+  } catch (error) {
+    console.error("Student Timesheet Error:", error);
+    return res.status(500).json({ message: "Server error" });
   }
 };

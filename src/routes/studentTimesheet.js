@@ -3,16 +3,14 @@ const router = express.Router();
 
 const auth = require("../middlewares/authMiddleware");
 const roles = require("../middlewares/roleMiddleware");
-const {
-  createStudentTimesheet
-} = require("../controllers/studentTimesheetController");
+const controller = require("../controllers/studentTimesheetController");
 
-// ONLY CREATE — ONLY TEACHER
+// Teacher + Admin can create timesheet
 router.post(
   "/",
   auth,
-  roles("teacher"),
-  createStudentTimesheet
+  roles("teacher", "ngo_admin", "center_admin", "super_admin"),
+  controller.createStudentTimesheet
 );
 
 module.exports = router;
