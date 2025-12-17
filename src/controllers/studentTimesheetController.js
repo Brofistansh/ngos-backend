@@ -1,4 +1,4 @@
-const StudentTimesheet = require("../models/sequelize/StudentTimeSheet.js");
+const StudentTimesheet = require("../models/sequelize/StudentTimesheet.js");
 const Student = require("../models/sequelize/Student.js");
 
 exports.createStudentTimesheet = async (req, res) => {
