@@ -42,6 +42,12 @@ const Center = sequelize.define('Center', {
   ngo_id: {
     type: DataTypes.UUID,
     allowNull: false
+  },
+
+  // ✅ NEW: manager can manage multiple centers
+  manager_id: {
+    type: DataTypes.UUID,
+    allowNull: true
   }
 
 }, {

@@ -13,19 +13,18 @@ router.post(
   centerController.createCenter
 );
 
-
 // GET all centers of an NGO
 router.get(
   '/:ngo_id/centers',
   auth,
-  centerController.getCentersByNGO   // <-- FIXED
+  centerController.getCentersByNGO
 );
 
-// UPDATE Center
+// UPDATE Center (including manager assignment)
 router.put(
   '/:ngo_id/centers/:id',
   auth,
-  roles("center_admin"),
+  roles("super_admin", "ngo_admin"), // ✅ FIXED
   centerController.updateCenter
 );
 
@@ -33,7 +32,7 @@ router.put(
 router.delete(
   '/:ngo_id/centers/:id',
   auth,
-  roles("center_admin"),
+  roles("super_admin", "ngo_admin"), // ✅ FIXED
   centerController.deleteCenter
 );
 

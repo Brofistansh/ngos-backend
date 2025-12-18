@@ -4,7 +4,13 @@ const NGO = require('../models/sequelize/NGO');
 exports.createCenter = async (req, res) => {
   try {
     const { ngo_id } = req.params;  // NGO ID in URL
-    const { name, contact_phone, timezone, zone } = req.body; // ⬅️ zone added here
+    const {
+      name,
+      contact_phone,
+      timezone,
+      zone,
+      manager_id // ✅ NEW (optional)
+    } = req.body;
 
     const ngo = await NGO.findByPk(ngo_id);
     if (!ngo) {
@@ -16,7 +22,8 @@ exports.createCenter = async (req, res) => {
       name,
       contact_phone,
       timezone,
-      zone // ⬅️ zone stored in DB
+      zone,
+      manager_id: manager_id || null // ✅ safely assign
     });
 
     return res.status(201).json({
@@ -30,16 +37,15 @@ exports.createCenter = async (req, res) => {
   }
 };
 
-
 exports.getCentersByNGO = async (req, res) => {
   try {
     const { ngo_id } = req.params;
-    const { zone } = req.query; // ⬅️ zone filter from query
+    const { zone } = req.query;
 
-    let where = { ngo_id }; // base filter
+    let where = { ngo_id };
 
     if (zone) {
-      where.zone = zone; // ⬅️ apply zone filter
+      where.zone = zone;
     }
 
     const centers = await Center.findAll({ where });
@@ -50,6 +56,7 @@ exports.getCentersByNGO = async (req, res) => {
     res.status(500).json({ message: "Error fetching centers" });
   }
 };
+
 // UPDATE CENTER
 exports.updateCenter = async (req, res) => {
   try {
@@ -59,6 +66,7 @@ exports.updateCenter = async (req, res) => {
       return res.status(404).json({ message: 'Center not found or inactive' });
     }
 
+    // ✅ manager_id can be updated here as well
     await center.update(req.body);
 
     res.json({
