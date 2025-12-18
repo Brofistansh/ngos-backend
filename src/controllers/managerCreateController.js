@@ -5,7 +5,8 @@ const { Op } = require("sequelize");
 
 /**
  * CREATE CENTER MANAGER
- * Creates User (center_admin) + ManagerDetails
+ * - Prevents duplicate email
+ * - Creates User + ManagerDetails safely
  */
 exports.createCenterManager = async (req, res) => {
   try {
@@ -29,21 +30,32 @@ exports.createCenterManager = async (req, res) => {
       manager_photo
     } = req.body;
 
-    // Hash password
-    const hashed = await bcrypt.hash(password, 10);
+    // 🔒 1. Check duplicate email
+    const existingUser = await User.findOne({
+      where: { email }
+    });
 
-    // Create user login
+    if (existingUser) {
+      return res.status(409).json({
+        message: "Manager with this email already exists"
+      });
+    }
+
+    // 🔐 2. Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // 👤 3. Create User
     const user = await User.create({
       name,
       email,
-      password: hashed,
+      password: hashedPassword,
       role: "center_admin",
       ngo_id,
       center_id,
       status: "active"
     });
 
-    // Create ManagerDetails entry
+    // 📄 4. Create ManagerDetails
     const details = await ManagerDetails.create({
       user_id: user.id,
       father_name,
@@ -66,15 +78,17 @@ exports.createCenterManager = async (req, res) => {
       details
     });
 
-  } catch (err) {
-    console.error("Create Manager Error:", err);
-    return res.status(500).json({ message: "Failed to create center manager" });
+  } catch (error) {
+    console.error("Create Manager Error:", error);
+    return res.status(500).json({
+      message: "Failed to create center manager"
+    });
   }
 };
 
 
 /**
- * GET ALL MANAGERS (with optional filters)
+ * GET ALL MANAGERS
  */
 exports.getManagers = async (req, res) => {
   try {
@@ -99,8 +113,8 @@ exports.getManagers = async (req, res) => {
       data: managers
     });
 
-  } catch (err) {
-    console.error("Error fetching managers:", err);
+  } catch (error) {
+    console.error(error);
     return res.status(500).json({ message: "Failed to fetch managers" });
   }
 };
@@ -118,20 +132,20 @@ exports.getManagerById = async (req, res) => {
       include: [{ model: ManagerDetails, as: "manager_details" }]
     });
 
-    if (!manager)
+    if (!manager) {
       return res.status(404).json({ message: "Manager not found" });
+    }
 
     return res.json(manager);
 
-  } catch (err) {
-    console.error("Error fetching manager:", err);
+  } catch (error) {
     return res.status(500).json({ message: "Failed to fetch manager" });
   }
 };
 
 
 /**
- * UPDATE MANAGER (updates both User + ManagerDetails)
+ * UPDATE MANAGER
  */
 exports.updateManager = async (req, res) => {
   try {
@@ -142,22 +156,22 @@ exports.updateManager = async (req, res) => {
       include: [{ model: ManagerDetails, as: "manager_details" }]
     });
 
-    if (!manager)
+    if (!manager) {
       return res.status(404).json({ message: "Manager not found" });
+    }
 
-    // Update User table
     await manager.update(req.body);
 
-    // Update ManagerDetails table
-    await manager.manager_details.update(req.body);
+    if (manager.manager_details) {
+      await manager.manager_details.update(req.body);
+    }
 
     return res.json({
       message: "Manager updated successfully",
       manager
     });
 
-  } catch (err) {
-    console.error("Update manager error:", err);
+  } catch (error) {
     return res.status(500).json({ message: "Failed to update manager" });
   }
 };
@@ -174,15 +188,15 @@ exports.deleteManager = async (req, res) => {
       where: { id, role: "center_admin" }
     });
 
-    if (!manager)
+    if (!manager) {
       return res.status(404).json({ message: "Manager not found" });
+    }
 
     await manager.update({ status: "inactive" });
 
     return res.json({ message: "Manager deactivated successfully" });
 
-  } catch (err) {
-    console.error("Delete manager error:", err);
+  } catch (error) {
     return res.status(500).json({ message: "Failed to delete manager" });
   }
 };
