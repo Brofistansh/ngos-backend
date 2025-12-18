@@ -13,28 +13,20 @@ router.post(
   controller.createStudentTimesheet
 );
 
-// GET ALL (filters)
-router.get(
-  "/",
-  auth,
-  roles("teacher", "ngo_admin", "center_admin", "super_admin"),
-  controller.getStudentTimesheets
-);
-
-// GET BY ID
-router.get(
-  "/:id",
-  auth,
-  roles("teacher", "ngo_admin", "center_admin", "super_admin"),
-  controller.getStudentTimesheetById
-);
-
 // UPDATE
 router.put(
   "/:id",
   auth,
   roles("teacher", "ngo_admin", "center_admin", "super_admin"),
   controller.updateStudentTimesheet
+);
+
+// GET
+router.get(
+  "/",
+  auth,
+  roles("teacher", "ngo_admin", "center_admin", "super_admin"),
+  controller.getStudentTimesheets
 );
 
 // DELETE

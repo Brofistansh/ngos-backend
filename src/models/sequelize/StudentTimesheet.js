@@ -59,6 +59,17 @@ const StudentTimesheet = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true,
     },
+
+    // 🔥 AUDIT FIELDS
+    created_by: {
+      type: DataTypes.UUID,
+      allowNull: false,
+    },
+
+    updated_by: {
+      type: DataTypes.UUID,
+      allowNull: true,
+    },
   },
   {
     tableName: "student_timesheets",
