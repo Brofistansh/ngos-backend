@@ -1,11 +1,13 @@
+const { Op } = require("sequelize");
 const TeacherTimesheet = require("../models/sequelize/TeacherTimesheet");
 const Teacher = require("../models/sequelize/Teacher");
 
-// CREATE
+/**
+ * CREATE TEACHER TIMESHEET
+ */
 exports.createTeacherTimesheet = async (req, res) => {
   try {
     const {
-      teacher_id,
       date,
       attendance,
       in_time,
@@ -14,42 +16,71 @@ exports.createTeacherTimesheet = async (req, res) => {
       level,
     } = req.body;
 
-    const teacher = await Teacher.findByPk(teacher_id);
+    // Basic validation
+    if (!date || !attendance) {
+      return res.status(400).json({
+        message: "date and attendance are required",
+      });
+    }
+
+    // 🔐 Derive teacher from logged-in user
+    const teacher = await Teacher.findOne({
+      where: { user_id: req.user.id },
+    });
+
     if (!teacher) {
       return res.status(404).json({ message: "Teacher not found" });
     }
 
     const timesheet = await TeacherTimesheet.create({
-      teacher_id,
-      ngo_id: teacher.ngo_id,
-      center_id: teacher.center_id,
+      teacher_id: teacher.id,
+      ngo_id: req.user.ngo_id,
+      center_id: req.user.center_id,
       date,
       attendance,
       in_time,
       out_time,
       total_home_visit,
       level: level || null,
+
+      // 🔥 AUDIT FIELDS
+      created_by: req.user.id,
+      updated_by: req.user.id,
     });
 
-    res.status(201).json({
-      message: "Teacher timesheet created",
+    return res.status(201).json({
+      message: "Teacher timesheet created successfully",
       data: timesheet,
     });
+
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
+    console.error("Teacher Timesheet Error:", err);
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
-// GET (filters)
+
+/**
+ * GET TEACHER TIMESHEETS (filters)
+ */
 exports.getTeacherTimesheets = async (req, res) => {
   try {
-    const { teacher_id, from_date, to_date } = req.query;
-    const where = {};
+    const { from_date, to_date } = req.query;
 
-    if (teacher_id) where.teacher_id = teacher_id;
+    const teacher = await Teacher.findOne({
+      where: { user_id: req.user.id },
+    });
+
+    if (!teacher) {
+      return res.status(404).json({ message: "Teacher not found" });
+    }
+
+    const where = {
+      teacher_id: teacher.id,
+    };
+
     if (from_date && to_date) {
-      where.date = { $between: [from_date, to_date] };
+      where.date = { [Op.between]: [from_date, to_date] };
     }
 
     const data = await TeacherTimesheet.findAll({
@@ -57,42 +88,63 @@ exports.getTeacherTimesheets = async (req, res) => {
       order: [["date", "DESC"]],
     });
 
-    res.json({ count: data.length, data });
+    res.json({
+      count: data.length,
+      data,
+    });
+
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-// UPDATE
+
+/**
+ * UPDATE TEACHER TIMESHEET
+ */
 exports.updateTeacherTimesheet = async (req, res) => {
   try {
     const timesheet = await TeacherTimesheet.findByPk(req.params.id);
+
     if (!timesheet) {
       return res.status(404).json({ message: "Timesheet not found" });
     }
 
-    await timesheet.update(req.body);
+    await timesheet.update({
+      ...req.body,
+      updated_by: req.user.id, // 🔥 AUDIT
+    });
 
     res.json({
-      message: "Teacher timesheet updated",
+      message: "Teacher timesheet updated successfully",
       data: timesheet,
     });
+
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-// DELETE
+
+/**
+ * DELETE TEACHER TIMESHEET
+ */
 exports.deleteTeacherTimesheet = async (req, res) => {
   try {
     const timesheet = await TeacherTimesheet.findByPk(req.params.id);
+
     if (!timesheet) {
       return res.status(404).json({ message: "Timesheet not found" });
     }
 
     await timesheet.destroy();
-    res.json({ message: "Teacher timesheet deleted" });
+
+    res.json({ message: "Teacher timesheet deleted successfully" });
+
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Server error" });
   }
 };
