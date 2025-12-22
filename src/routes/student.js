@@ -10,7 +10,7 @@ const multer = require("multer");
 const upload = multer({ dest: "uploads/" });
 
 // Roles allowed to manage students
-const allowedRoles = ["super_admin", "ngo_admin", "center_admin"];
+const allowedRoles = ["super_admin", "ngo_admin", "center_admin","teacher"];
 
 // CREATE student
 router.post(
