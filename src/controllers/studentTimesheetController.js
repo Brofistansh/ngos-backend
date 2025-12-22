@@ -23,6 +23,13 @@ exports.createStudentTimesheet = async (req, res) => {
       return res.status(404).json({ message: "Student not found" });
     }
 
+    // 🔥 SAFE NAME SNAPSHOT
+    const actorName =
+      req.user.name ||
+      req.user.teacher_name ||
+      req.user.email ||
+      "System User";
+
     const timesheet = await StudentTimesheet.create({
       student_id,
       ngo_id: student.ngo_id,
@@ -35,11 +42,11 @@ exports.createStudentTimesheet = async (req, res) => {
       quiz_percentage,
       level: level || null,
 
-      // 🔥 AUDIT (ID + NAME SNAPSHOT)
+      // 🔥 AUDIT (ID + NAME)
       created_by: req.user.id,
-      created_by_name: req.user.name,
+      created_by_name: actorName,
       updated_by: req.user.id,
-      updated_by_name: req.user.name,
+      updated_by_name: actorName,
     });
 
     res.status(201).json({
@@ -62,12 +69,17 @@ exports.updateStudentTimesheet = async (req, res) => {
       return res.status(404).json({ message: "Timesheet not found" });
     }
 
+    const actorName =
+      req.user.name ||
+      req.user.email ||
+      "System User";
+
     await timesheet.update({
       ...req.body,
 
       // 🔥 AUDIT UPDATE
       updated_by: req.user.id,
-      updated_by_name: req.user.name,
+      updated_by_name: actorName,
     });
 
     res.json({
