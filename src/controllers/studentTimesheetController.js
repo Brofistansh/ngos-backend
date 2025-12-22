@@ -1,8 +1,9 @@
 const StudentTimesheet = require("../models/sequelize/StudentTimesheet");
 const Student = require("../models/sequelize/Student");
+const User = require("../models/sequelize/User");
 
 // ============================
-// CREATE
+// CREATE STUDENT TIMESHEET
 // ============================
 exports.createStudentTimesheet = async (req, res) => {
   try {
@@ -17,19 +18,17 @@ exports.createStudentTimesheet = async (req, res) => {
       level
     } = req.body;
 
-    // Validate student
+    // 1️⃣ Validate student
     const student = await Student.findByPk(student_id);
     if (!student) {
       return res.status(404).json({ message: "Student not found" });
     }
 
-    // 🔥 SAFE NAME SNAPSHOT
-    const actorName =
-      req.user.name ||
-      req.user.teacher_name ||
-      req.user.email ||
-      "System User";
+    // 2️⃣ Fetch logged-in user for name snapshot
+    const actor = await User.findByPk(req.user.id);
+    const actorName = actor?.name || actor?.email || "System User";
 
+    // 3️⃣ Create timesheet
     const timesheet = await StudentTimesheet.create({
       student_id,
       ngo_id: student.ngo_id,
@@ -42,25 +41,26 @@ exports.createStudentTimesheet = async (req, res) => {
       quiz_percentage,
       level: level || null,
 
-      // 🔥 AUDIT (ID + NAME)
+      // 🔥 AUDIT FIELDS
       created_by: req.user.id,
       created_by_name: actorName,
       updated_by: req.user.id,
       updated_by_name: actorName,
     });
 
-    res.status(201).json({
-      message: "Student timesheet created",
+    return res.status(201).json({
+      message: "Student timesheet created successfully",
       data: timesheet,
     });
+
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
+    console.error("Create Student Timesheet Error:", err);
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
 // ============================
-// UPDATE
+// UPDATE STUDENT TIMESHEET
 // ============================
 exports.updateStudentTimesheet = async (req, res) => {
   try {
@@ -69,43 +69,49 @@ exports.updateStudentTimesheet = async (req, res) => {
       return res.status(404).json({ message: "Timesheet not found" });
     }
 
-    const actorName =
-      req.user.name ||
-      req.user.email ||
-      "System User";
+    // Fetch user for updated_by_name
+    const actor = await User.findByPk(req.user.id);
+    const actorName = actor?.name || actor?.email || "System User";
 
     await timesheet.update({
       ...req.body,
-
-      // 🔥 AUDIT UPDATE
       updated_by: req.user.id,
       updated_by_name: actorName,
     });
 
-    res.json({
-      message: "Student timesheet updated",
+    return res.json({
+      message: "Student timesheet updated successfully",
       data: timesheet,
     });
+
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
+    console.error("Update Student Timesheet Error:", err);
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
 // ============================
-// GET ALL
+// GET ALL STUDENT TIMESHEETS
 // ============================
 exports.getStudentTimesheets = async (req, res) => {
   try {
-    const data = await StudentTimesheet.findAll();
-    res.json({ count: data.length, data });
+    const data = await StudentTimesheet.findAll({
+      order: [["date", "DESC"]],
+    });
+
+    return res.json({
+      count: data.length,
+      data,
+    });
+
   } catch (err) {
-    res.status(500).json({ message: "Server error" });
+    console.error("Get Student Timesheets Error:", err);
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
 // ============================
-// DELETE
+// DELETE STUDENT TIMESHEET
 // ============================
 exports.deleteStudentTimesheet = async (req, res) => {
   try {
@@ -115,8 +121,13 @@ exports.deleteStudentTimesheet = async (req, res) => {
     }
 
     await timesheet.destroy();
-    res.json({ message: "Timesheet deleted" });
+
+    return res.json({
+      message: "Student timesheet deleted successfully",
+    });
+
   } catch (err) {
-    res.status(500).json({ message: "Server error" });
+    console.error("Delete Student Timesheet Error:", err);
+    return res.status(500).json({ message: "Server error" });
   }
 };
