@@ -1,7 +1,9 @@
 const StudentTimesheet = require("../models/sequelize/StudentTimesheet");
 const Student = require("../models/sequelize/Student");
 
+// ============================
 // CREATE
+// ============================
 exports.createStudentTimesheet = async (req, res) => {
   try {
     const {
@@ -33,9 +35,11 @@ exports.createStudentTimesheet = async (req, res) => {
       quiz_percentage,
       level: level || null,
 
-      // 🔥 AUDIT
+      // 🔥 AUDIT (ID + NAME SNAPSHOT)
       created_by: req.user.id,
+      created_by_name: req.user.name,
       updated_by: req.user.id,
+      updated_by_name: req.user.name,
     });
 
     res.status(201).json({
@@ -48,7 +52,9 @@ exports.createStudentTimesheet = async (req, res) => {
   }
 };
 
+// ============================
 // UPDATE
+// ============================
 exports.updateStudentTimesheet = async (req, res) => {
   try {
     const timesheet = await StudentTimesheet.findByPk(req.params.id);
@@ -58,7 +64,10 @@ exports.updateStudentTimesheet = async (req, res) => {
 
     await timesheet.update({
       ...req.body,
-      updated_by: req.user.id, // 🔥 AUDIT
+
+      // 🔥 AUDIT UPDATE
+      updated_by: req.user.id,
+      updated_by_name: req.user.name,
     });
 
     res.json({
@@ -71,7 +80,9 @@ exports.updateStudentTimesheet = async (req, res) => {
   }
 };
 
-// GET ALL (OPTIONAL BUT USEFUL)
+// ============================
+// GET ALL
+// ============================
 exports.getStudentTimesheets = async (req, res) => {
   try {
     const data = await StudentTimesheet.findAll();
@@ -81,7 +92,9 @@ exports.getStudentTimesheets = async (req, res) => {
   }
 };
 
+// ============================
 // DELETE
+// ============================
 exports.deleteStudentTimesheet = async (req, res) => {
   try {
     const timesheet = await StudentTimesheet.findByPk(req.params.id);

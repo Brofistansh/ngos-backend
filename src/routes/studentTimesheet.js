@@ -33,7 +33,7 @@ router.get(
 router.delete(
   "/:id",
   auth,
-  roles("ngo_admin", "center_admin", "super_admin"),
+  roles("teacher","ngo_admin", "center_admin", "super_admin"),
   controller.deleteStudentTimesheet
 );
 

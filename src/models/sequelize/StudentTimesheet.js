@@ -60,7 +60,7 @@ const StudentTimesheet = sequelize.define(
       allowNull: true,
     },
 
-    // 🔥 AUDIT FIELDS
+    // 🔥 AUDIT (ID)
     created_by: {
       type: DataTypes.UUID,
       allowNull: false,
@@ -68,6 +68,17 @@ const StudentTimesheet = sequelize.define(
 
     updated_by: {
       type: DataTypes.UUID,
+      allowNull: true,
+    },
+
+    // 🔥 AUDIT (NAME SNAPSHOT)
+    created_by_name: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+
+    updated_by_name: {
+      type: DataTypes.STRING,
       allowNull: true,
     },
   },
