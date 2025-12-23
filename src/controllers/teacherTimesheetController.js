@@ -1,6 +1,7 @@
 const { Op } = require("sequelize");
 const TeacherTimesheet = require("../models/sequelize/TeacherTimesheet");
 const Teacher = require("../models/sequelize/Teacher");
+const User = require("../models/sequelize/User");
 
 /**
  * ============================
@@ -71,7 +72,7 @@ exports.createTeacherTimesheet = async (req, res) => {
  * - center_admin  → center teachers
  * - ngo_admin     → NGO teachers
  * - super_admin   → all
- * Includes teacher name
+ * Includes teacher name (from User table)
  */
 exports.getTeacherTimesheets = async (req, res) => {
   try {
@@ -117,17 +118,23 @@ exports.getTeacherTimesheets = async (req, res) => {
     }
 
     // ----------------------------
-    // 🔥 FETCH WITH TEACHER NAME
+    // 🔥 FETCH WITH TEACHER NAME (CORRECT WAY)
     // ----------------------------
     const data = await TeacherTimesheet.findAll({
       where,
+      order: [["date", "DESC"]],
       include: [
         {
           model: Teacher,
-          attributes: ["id", "name"], // 👈 teacher name
+          attributes: ["id", "user_id"],
+          include: [
+            {
+              model: User,
+              attributes: ["id", "name", "email"],
+            },
+          ],
         },
       ],
-      order: [["date", "DESC"]],
     });
 
     res.json({

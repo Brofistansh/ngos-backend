@@ -1,35 +1,29 @@
-// src/models/sequelize/index.js
-
-const Student = require("./Student");
+const User = require("./User");
 const Teacher = require("./Teacher");
 const TeacherTimesheet = require("./TeacherTimesheet");
-const StudentTimesheet = require("./StudentTimesheet");
 
 // --------------------
 // ASSOCIATIONS
 // --------------------
 
+// Teacher ↔ User
+Teacher.belongsTo(User, {
+  foreignKey: "user_id",
+});
+User.hasOne(Teacher, {
+  foreignKey: "user_id",
+});
+
 // Teacher ↔ TeacherTimesheet
 Teacher.hasMany(TeacherTimesheet, {
   foreignKey: "teacher_id",
 });
-
 TeacherTimesheet.belongsTo(Teacher, {
   foreignKey: "teacher_id",
 });
 
-// Student ↔ StudentTimesheet
-Student.hasMany(StudentTimesheet, {
-  foreignKey: "student_id",
-});
-
-StudentTimesheet.belongsTo(Student, {
-  foreignKey: "student_id",
-});
-
 module.exports = {
-  Student,
+  User,
   Teacher,
   TeacherTimesheet,
-  StudentTimesheet,
 };
