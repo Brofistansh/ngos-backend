@@ -2,9 +2,9 @@ const { Op } = require("sequelize");
 const TeacherTimesheet = require("../models/sequelize/TeacherTimesheet");
 const Teacher = require("../models/sequelize/Teacher");
 
-/**
- * CREATE TEACHER TIMESHEET
- */
+// ============================
+// CREATE TEACHER TIMESHEET
+// ============================
 exports.createTeacherTimesheet = async (req, res) => {
   try {
     const {
@@ -16,14 +16,13 @@ exports.createTeacherTimesheet = async (req, res) => {
       level,
     } = req.body;
 
-    // Basic validation
     if (!date || !attendance) {
       return res.status(400).json({
         message: "date and attendance are required",
       });
     }
 
-    // 🔐 Derive teacher from logged-in user
+    // Only teacher can create his own timesheet
     const teacher = await Teacher.findOne({
       where: { user_id: req.user.id },
     });
@@ -43,7 +42,6 @@ exports.createTeacherTimesheet = async (req, res) => {
       total_home_visit,
       level: level || null,
 
-      // 🔥 AUDIT FIELDS
       created_by: req.user.id,
       updated_by: req.user.id,
     });
@@ -60,24 +58,48 @@ exports.createTeacherTimesheet = async (req, res) => {
 };
 
 
-/**
- * GET TEACHER TIMESHEETS (filters)
- */
+// ============================
+// GET TEACHER TIMESHEETS (ROLE BASED)
+// ============================
 exports.getTeacherTimesheets = async (req, res) => {
   try {
-    const { from_date, to_date } = req.query;
+    const { role, id, ngo_id, center_id } = req.user;
+    const { teacher_id, from_date, to_date } = req.query;
 
-    const teacher = await Teacher.findOne({
-      where: { user_id: req.user.id },
-    });
+    const where = {};
 
-    if (!teacher) {
-      return res.status(404).json({ message: "Teacher not found" });
+    // ----------------------------
+    // ROLE LOGIC
+    // ----------------------------
+
+    if (role === "teacher") {
+      const teacher = await Teacher.findOne({
+        where: { user_id: id },
+      });
+
+      if (!teacher) {
+        return res.status(404).json({ message: "Teacher not found" });
+      }
+
+      where.teacher_id = teacher.id;
     }
 
-    const where = {
-      teacher_id: teacher.id,
-    };
+    if (role === "center_admin") {
+      where.center_id = center_id;
+    }
+
+    if (role === "ngo_admin") {
+      where.ngo_id = ngo_id;
+    }
+
+    // super_admin → no restriction
+
+    // ----------------------------
+    // OPTIONAL FILTERS
+    // ----------------------------
+    if (teacher_id) {
+      where.teacher_id = teacher_id;
+    }
 
     if (from_date && to_date) {
       where.date = { [Op.between]: [from_date, to_date] };
@@ -94,15 +116,15 @@ exports.getTeacherTimesheets = async (req, res) => {
     });
 
   } catch (err) {
-    console.error(err);
+    console.error("Get Teacher Timesheet Error:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
 
 
-/**
- * UPDATE TEACHER TIMESHEET
- */
+// ============================
+// UPDATE
+// ============================
 exports.updateTeacherTimesheet = async (req, res) => {
   try {
     const timesheet = await TeacherTimesheet.findByPk(req.params.id);
@@ -113,7 +135,7 @@ exports.updateTeacherTimesheet = async (req, res) => {
 
     await timesheet.update({
       ...req.body,
-      updated_by: req.user.id, // 🔥 AUDIT
+      updated_by: req.user.id,
     });
 
     res.json({
@@ -128,9 +150,9 @@ exports.updateTeacherTimesheet = async (req, res) => {
 };
 
 
-/**
- * DELETE TEACHER TIMESHEET
- */
+// ============================
+// DELETE
+// ============================
 exports.deleteTeacherTimesheet = async (req, res) => {
   try {
     const timesheet = await TeacherTimesheet.findByPk(req.params.id);
