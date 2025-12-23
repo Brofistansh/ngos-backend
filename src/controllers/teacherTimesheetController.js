@@ -2,9 +2,12 @@ const { Op } = require("sequelize");
 const TeacherTimesheet = require("../models/sequelize/TeacherTimesheet");
 const Teacher = require("../models/sequelize/Teacher");
 
-// ============================
-// CREATE TEACHER TIMESHEET
-// ============================
+/**
+ * ============================
+ * CREATE TEACHER TIMESHEET
+ * ============================
+ * Only TEACHER can create his own timesheet
+ */
 exports.createTeacherTimesheet = async (req, res) => {
   try {
     const {
@@ -22,7 +25,7 @@ exports.createTeacherTimesheet = async (req, res) => {
       });
     }
 
-    // Only teacher can create his own timesheet
+    // 🔐 derive teacher from logged-in user
     const teacher = await Teacher.findOne({
       where: { user_id: req.user.id },
     });
@@ -42,6 +45,7 @@ exports.createTeacherTimesheet = async (req, res) => {
       total_home_visit,
       level: level || null,
 
+      // 🔥 AUDIT
       created_by: req.user.id,
       updated_by: req.user.id,
     });
@@ -52,15 +56,23 @@ exports.createTeacherTimesheet = async (req, res) => {
     });
 
   } catch (err) {
-    console.error("Teacher Timesheet Error:", err);
+    console.error("Create Teacher Timesheet Error:", err);
     return res.status(500).json({ message: "Server error" });
   }
 };
 
 
-// ============================
-// GET TEACHER TIMESHEETS (ROLE BASED)
-// ============================
+/**
+ * ============================
+ * GET TEACHER TIMESHEETS
+ * ============================
+ * ROLE BASED:
+ * - teacher       → only own
+ * - center_admin  → center teachers
+ * - ngo_admin     → NGO teachers
+ * - super_admin   → all
+ * Includes teacher name
+ */
 exports.getTeacherTimesheets = async (req, res) => {
   try {
     const { role, id, ngo_id, center_id } = req.user;
@@ -69,9 +81,8 @@ exports.getTeacherTimesheets = async (req, res) => {
     const where = {};
 
     // ----------------------------
-    // ROLE LOGIC
+    // ROLE BASED ACCESS
     // ----------------------------
-
     if (role === "teacher") {
       const teacher = await Teacher.findOne({
         where: { user_id: id },
@@ -105,8 +116,17 @@ exports.getTeacherTimesheets = async (req, res) => {
       where.date = { [Op.between]: [from_date, to_date] };
     }
 
+    // ----------------------------
+    // 🔥 FETCH WITH TEACHER NAME
+    // ----------------------------
     const data = await TeacherTimesheet.findAll({
       where,
+      include: [
+        {
+          model: Teacher,
+          attributes: ["id", "name"], // 👈 teacher name
+        },
+      ],
       order: [["date", "DESC"]],
     });
 
@@ -122,9 +142,11 @@ exports.getTeacherTimesheets = async (req, res) => {
 };
 
 
-// ============================
-// UPDATE
-// ============================
+/**
+ * ============================
+ * UPDATE TEACHER TIMESHEET
+ * ============================
+ */
 exports.updateTeacherTimesheet = async (req, res) => {
   try {
     const timesheet = await TeacherTimesheet.findByPk(req.params.id);
@@ -135,7 +157,7 @@ exports.updateTeacherTimesheet = async (req, res) => {
 
     await timesheet.update({
       ...req.body,
-      updated_by: req.user.id,
+      updated_by: req.user.id, // 🔥 AUDIT
     });
 
     res.json({
@@ -144,15 +166,17 @@ exports.updateTeacherTimesheet = async (req, res) => {
     });
 
   } catch (err) {
-    console.error(err);
+    console.error("Update Teacher Timesheet Error:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
 
 
-// ============================
-// DELETE
-// ============================
+/**
+ * ============================
+ * DELETE TEACHER TIMESHEET
+ * ============================
+ */
 exports.deleteTeacherTimesheet = async (req, res) => {
   try {
     const timesheet = await TeacherTimesheet.findByPk(req.params.id);
@@ -166,7 +190,7 @@ exports.deleteTeacherTimesheet = async (req, res) => {
     res.json({ message: "Teacher timesheet deleted successfully" });
 
   } catch (err) {
-    console.error(err);
+    console.error("Delete Teacher Timesheet Error:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
