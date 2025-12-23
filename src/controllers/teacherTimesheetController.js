@@ -26,7 +26,6 @@ exports.createTeacherTimesheet = async (req, res) => {
       });
     }
 
-    // 🔐 derive teacher from logged-in user
     const teacher = await Teacher.findOne({
       where: { user_id: req.user.id },
     });
@@ -45,8 +44,6 @@ exports.createTeacherTimesheet = async (req, res) => {
       out_time,
       total_home_visit,
       level: level || null,
-
-      // 🔥 AUDIT
       created_by: req.user.id,
       updated_by: req.user.id,
     });
@@ -55,24 +52,16 @@ exports.createTeacherTimesheet = async (req, res) => {
       message: "Teacher timesheet created successfully",
       data: timesheet,
     });
-
   } catch (err) {
     console.error("Create Teacher Timesheet Error:", err);
     return res.status(500).json({ message: "Server error" });
   }
 };
 
-
 /**
  * ============================
  * GET TEACHER TIMESHEETS
  * ============================
- * ROLE BASED:
- * - teacher       → only own
- * - center_admin  → center teachers
- * - ngo_admin     → NGO teachers
- * - super_admin   → all
- * Includes teacher name (from User table)
  */
 exports.getTeacherTimesheets = async (req, res) => {
   try {
@@ -118,7 +107,7 @@ exports.getTeacherTimesheets = async (req, res) => {
     }
 
     // ----------------------------
-    // 🔥 FETCH WITH TEACHER NAME (CORRECT WAY)
+    // FETCH WITH TEACHER NAME
     // ----------------------------
     const data = await TeacherTimesheet.findAll({
       where,
@@ -126,10 +115,12 @@ exports.getTeacherTimesheets = async (req, res) => {
       include: [
         {
           model: Teacher,
+          as: "teacher",
           attributes: ["id", "user_id"],
           include: [
             {
               model: User,
+              as: "user",
               attributes: ["id", "name", "email"],
             },
           ],
@@ -141,17 +132,15 @@ exports.getTeacherTimesheets = async (req, res) => {
       count: data.length,
       data,
     });
-
   } catch (err) {
     console.error("Get Teacher Timesheet Error:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-
 /**
  * ============================
- * UPDATE TEACHER TIMESHEET
+ * UPDATE
  * ============================
  */
 exports.updateTeacherTimesheet = async (req, res) => {
@@ -164,24 +153,22 @@ exports.updateTeacherTimesheet = async (req, res) => {
 
     await timesheet.update({
       ...req.body,
-      updated_by: req.user.id, // 🔥 AUDIT
+      updated_by: req.user.id,
     });
 
     res.json({
       message: "Teacher timesheet updated successfully",
       data: timesheet,
     });
-
   } catch (err) {
     console.error("Update Teacher Timesheet Error:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-
 /**
  * ============================
- * DELETE TEACHER TIMESHEET
+ * DELETE
  * ============================
  */
 exports.deleteTeacherTimesheet = async (req, res) => {
@@ -195,7 +182,6 @@ exports.deleteTeacherTimesheet = async (req, res) => {
     await timesheet.destroy();
 
     res.json({ message: "Teacher timesheet deleted successfully" });
-
   } catch (err) {
     console.error("Delete Teacher Timesheet Error:", err);
     res.status(500).json({ message: "Server error" });

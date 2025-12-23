@@ -10,6 +10,7 @@ const Teacher = require("./Teacher");
 const Student = require("./Student");
 const ManagerDetails = require("./ManagerDetails");
 const ManagerCenter = require("./ManagerCenter");
+const TeacherTimesheet = require("./TeacherTimesheet"); // ✅ ADD THIS
 
 /**
  * ============================
@@ -29,9 +30,11 @@ User.belongsTo(NGO, { foreignKey: "ngo_id" });
 Center.hasMany(User, { foreignKey: "center_id" });
 User.belongsTo(Center, { foreignKey: "center_id" });
 
-// ============================
-// USER → MANAGER DETAILS (ONLY ONCE)
-// ============================
+/**
+ * ============================
+ * USER → MANAGER DETAILS (ONLY ONCE)
+ * ============================
+ */
 User.hasOne(ManagerDetails, {
   foreignKey: "user_id",
   as: "manager_details",
@@ -71,6 +74,24 @@ ManagerCenter.belongsTo(Center, {
   as: "center",
 });
 
+/**
+ * ============================
+ * TEACHER ↔ TEACHER TIMESHEET ✅ (FIX)
+ * ============================
+ */
+
+// Teacher → TeacherTimesheet
+Teacher.hasMany(TeacherTimesheet, {
+  foreignKey: "teacher_id",
+  as: "timesheets",
+});
+
+// TeacherTimesheet → Teacher
+TeacherTimesheet.belongsTo(Teacher, {
+  foreignKey: "teacher_id",
+  as: "teacher",
+});
+
 module.exports = {
   sequelize,
   User,
@@ -80,4 +101,5 @@ module.exports = {
   Student,
   ManagerDetails,
   ManagerCenter,
+  TeacherTimesheet, // ✅ EXPORT THIS
 };
