@@ -15,6 +15,11 @@ app.use(helmet());
 app.use(morgan('dev'));
 
 // ------------------------------
+// 🔥 LOAD SEQUELIZE MODELS & ASSOCIATIONS (CRITICAL)
+// ------------------------------
+require('./models/sequelize'); // ✅ DO NOT REMOVE
+
+// ------------------------------
 // PUBLIC ROUTES
 // ------------------------------
 app.get('/', (req, res) => {
@@ -41,7 +46,7 @@ app.use('/api/ngos', require('./routes/ngo'));
 app.use('/api/ngos', require('./routes/center'));
 app.use('/api/users', require('./routes/user'));
 
-app.use('/api/students', require('./routes/student'));
+app.use('/api/students', require('./routes/student')); // ✅ ONLY ONCE
 
 app.use('/api/student-attendance', require('./routes/studentAttendance'));
 app.use('/api/teacher-attendance', require('./routes/teacherAttendance'));
@@ -55,6 +60,9 @@ app.use('/api/reports', require('./routes/report'));
 app.use('/api/reports/donations', require('./routes/donationReports'));
 app.use('/api/zones', require('./routes/zoneRoutes'));
 
+// ------------------------------
+// TIMESHEETS & PERFORMANCE
+// ------------------------------
 app.use('/api/student-timesheet', require('./routes/studentTimesheet'));
 app.use('/api/teacher-timesheet', require('./routes/teacherTimesheet'));
 app.use('/api/student-performance', require('./routes/studentPerformance'));
@@ -70,9 +78,6 @@ app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 // DB CONNECTION
 // ------------------------------
 const sequelize = require('./db/postgres');
-
-// 🔥🔥🔥 THIS WAS MISSING — LOAD ALL MODEL ASSOCIATIONS
-require('./models/sequelize'); 
 
 (async () => {
   try {
