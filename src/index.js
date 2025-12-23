@@ -41,7 +41,7 @@ app.use('/api/ngos', require('./routes/ngo'));
 app.use('/api/ngos', require('./routes/center'));
 app.use('/api/users', require('./routes/user'));
 
-app.use('/api/students', require('./routes/student')); // ✅ ONLY ONCE
+app.use('/api/students', require('./routes/student'));
 
 app.use('/api/student-attendance', require('./routes/studentAttendance'));
 app.use('/api/teacher-attendance', require('./routes/teacherAttendance'));
@@ -55,14 +55,9 @@ app.use('/api/reports', require('./routes/report'));
 app.use('/api/reports/donations', require('./routes/donationReports'));
 app.use('/api/zones', require('./routes/zoneRoutes'));
 
-// ✅ STUDENT TIMESHEET (YOUR NEW FEATURE)
-const studentTimesheetRoutes = require("./routes/studentTimesheet");
-app.use("/api/student-timesheet", studentTimesheetRoutes);
-
-app.use("/api/teacher-timesheet", require("./routes/teacherTimesheet"));
-
-app.use("/api/student-performance", require("./routes/studentPerformance"));
-
+app.use('/api/student-timesheet', require('./routes/studentTimesheet'));
+app.use('/api/teacher-timesheet', require('./routes/teacherTimesheet'));
+app.use('/api/student-performance', require('./routes/studentPerformance'));
 
 // ------------------------------
 // SWAGGER DOCS
@@ -75,6 +70,9 @@ app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 // DB CONNECTION
 // ------------------------------
 const sequelize = require('./db/postgres');
+
+// 🔥🔥🔥 THIS WAS MISSING — LOAD ALL MODEL ASSOCIATIONS
+require('./models/sequelize'); 
 
 (async () => {
   try {
