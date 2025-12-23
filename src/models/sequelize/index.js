@@ -27,3 +27,23 @@ module.exports = {
   Teacher,
   TeacherTimesheet,
 };
+const ManagerCenter = require("./ManagerCenter");
+const Center = require("./Center");
+const User = require("./User");
+
+// Manager (User) ↔ Centers
+User.hasMany(ManagerCenter, {
+  foreignKey: "manager_id",
+});
+
+ManagerCenter.belongsTo(User, {
+  foreignKey: "manager_id",
+});
+
+Center.hasMany(ManagerCenter, {
+  foreignKey: "center_id",
+});
+
+ManagerCenter.belongsTo(Center, {
+  foreignKey: "center_id",
+});
