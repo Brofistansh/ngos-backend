@@ -1,24 +1,23 @@
 // src/controllers/authController.js
 
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const config = require('../../config');
+const bcrypt = require("bcryptjs");
+const crypto = require("crypto");
 
-const User = require('../models/sequelize/User');
-const PasswordResetToken = require('../models/sequelize/PasswordResetToken');
+const User = require("../models/sequelize/User");
+const PasswordResetToken = require("../models/sequelize/PasswordResetToken");
+const ManagerCenter = require("../models/sequelize/ManagerCenter");
+const Center = require("../models/sequelize/Center");
 
-// ------------------ TOKEN UTILS (ONE CLEAN IMPORT BLOCK) ------------------
+// ------------------ TOKEN UTILS ------------------
 const {
   signAccessToken,
   generateRefreshTokenPlain,
   saveRefreshToken,
   findValidRefreshToken,
-  revokeRefreshTokenByHash
-} = require('../utils/tokenUtils');
+  revokeRefreshTokenByHash,
+} = require("../utils/tokenUtils");
 
-const crypto = require('crypto');
-const { sendMail } = require('../utils/emailer');
-
+const { sendMail } = require("../utils/emailer");
 
 // ------------------ REGISTER SUPER ADMIN ------------------
 exports.registerSuperAdmin = async (req, res) => {
@@ -36,86 +35,125 @@ exports.registerSuperAdmin = async (req, res) => {
       name,
       email,
       password: hashed,
-      role: "super_admin"
+      role: "super_admin",
     });
 
     return res.json({
       message: "Super Admin created",
-      user: { id: user.id, email: user.email }
+      user: { id: user.id, email: user.email },
     });
-
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Error creating super admin" });
   }
 };
 
-
-// ------------------ LOGIN (ACCESS + REFRESH TOKEN) ------------------
+// ------------------ LOGIN ------------------
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
-    if (!email || !password)
+    if (!email || !password) {
       return res.status(400).json({ message: "email and password required" });
+    }
 
     const user = await User.findOne({ where: { email } });
-    if (!user)
+    if (!user) {
       return res.status(400).json({ message: "Invalid email or password" });
+    }
 
     const valid = await bcrypt.compare(password, user.password);
-    if (!valid)
+    if (!valid) {
       return res.status(400).json({ message: "Invalid email or password" });
+    }
 
-    // Access Token
+    // ----------------------------
+    // ACCESS TOKEN PAYLOAD
+    // ----------------------------
     const accessPayload = {
       id: user.id,
       role: user.role,
       ngo_id: user.ngo_id || null,
-      center_id: user.center_id || null
+      center_id: user.center_id || null,
     };
+
     const accessToken = signAccessToken(accessPayload);
 
-    // Refresh Token
+    // ----------------------------
+    // REFRESH TOKEN
+    // ----------------------------
     const plainRefresh = generateRefreshTokenPlain();
     await saveRefreshToken(user.id, plainRefresh);
 
+    // ----------------------------
+    // 🔥 MANAGER → FETCH CENTERS
+    // ----------------------------
+    let manager_centers = [];
+
+    if (user.role === "manager") {
+      const links = await ManagerCenter.findAll({
+        where: { manager_id: user.id },
+        include: [
+          {
+            model: Center,
+            attributes: ["id", "name", "zone", "address", "status"],
+          },
+        ],
+      });
+
+      manager_centers = links.map((mc) => mc.Center);
+    }
+
+    // ----------------------------
+    // RESPONSE
+    // ----------------------------
     return res.json({
       message: "Login success",
-      token: accessToken,          // backwards compatibility
+      token: accessToken, // backward compatibility
       access_token: accessToken,
-      refresh_token: plainRefresh
-    });
+      refresh_token: plainRefresh,
 
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        ngo_id: user.ngo_id,
+      },
+
+      // 👇 ONLY FOR MANAGER
+      manager_centers,
+    });
   } catch (err) {
-    console.error('login error', err);
+    console.error("login error", err);
     return res.status(500).json({ message: "Login failed" });
   }
 };
-
 
 // ------------------ REFRESH TOKEN ------------------
 exports.refreshToken = async (req, res) => {
   try {
     const { refresh_token } = req.body;
-    if (!refresh_token)
+    if (!refresh_token) {
       return res.status(400).json({ message: "refresh_token required" });
+    }
 
     const rt = await findValidRefreshToken(refresh_token);
-    if (!rt)
+    if (!rt) {
       return res.status(401).json({ message: "Invalid or expired refresh token" });
+    }
 
     const user = await User.findByPk(rt.user_id);
-    if (!user)
+    if (!user) {
       return res.status(401).json({ message: "User not found" });
+    }
 
     const newAccessToken = signAccessToken({
       id: user.id,
       role: user.role,
       ngo_id: user.ngo_id,
-      center_id: user.center_id
+      center_id: user.center_id,
     });
 
-    // Refresh Token Rotation
     await revokeRefreshTokenByHash(rt.token_hash);
 
     const newRefreshPlain = generateRefreshTokenPlain();
@@ -123,94 +161,92 @@ exports.refreshToken = async (req, res) => {
 
     return res.json({
       access_token: newAccessToken,
-      refresh_token: newRefreshPlain
+      refresh_token: newRefreshPlain,
     });
-
   } catch (err) {
     console.error("refreshToken error", err);
     return res.status(500).json({ message: "Error refreshing token" });
   }
 };
 
-
 // ------------------ REQUEST PASSWORD RESET ------------------
 exports.requestPasswordReset = async (req, res) => {
   try {
     const { email } = req.body;
-    if (!email)
-      return res.status(400).json({ message: "email required" });
+    if (!email) return res.status(400).json({ message: "email required" });
 
     const user = await User.findOne({ where: { email } });
-
-    // For privacy: always say OK
     if (!user) {
       return res.json({ message: "If an account exists, a reset link was sent" });
     }
 
     const plainToken = crypto.randomBytes(32).toString("hex");
-    const tokenHash = crypto.createHash("sha256").update(plainToken).digest("hex");
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+    const tokenHash = crypto
+      .createHash("sha256")
+      .update(plainToken)
+      .digest("hex");
+
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
     await PasswordResetToken.create({
       user_id: user.id,
       token_hash: tokenHash,
       expires_at: expiresAt,
-      used: false
+      used: false,
     });
 
-    const resetLink = `${process.env.FRONTEND_BASE_URL || "http://localhost:3000"
-      }/reset-password?token=${plainToken}&uid=${user.id}`;
+    const resetLink = `${
+      process.env.FRONTEND_BASE_URL || "http://localhost:3000"
+    }/reset-password?token=${plainToken}&uid=${user.id}`;
 
     await sendMail({
       to: user.email,
       subject: "Password Reset Request",
       html: `
         <p>Hello ${user.name || ""},</p>
-        <p>You requested a password reset. Click below (valid 15 minutes):</p>
+        <p>You requested a password reset. Click below:</p>
         <a href="${resetLink}">${resetLink}</a>
       `,
-      text: `Reset your password: ${resetLink}`
+      text: `Reset your password: ${resetLink}`,
     });
 
     return res.json({ message: "If an account exists, a reset link was sent" });
-
   } catch (err) {
     console.error("requestPasswordReset error", err);
     return res.status(500).json({ message: "Error requesting password reset" });
   }
 };
 
-
 // ------------------ RESET PASSWORD ------------------
 exports.resetPassword = async (req, res) => {
   try {
     const { uid, token, new_password } = req.body;
 
-    if (!uid || !token || !new_password)
-      return res.status(400).json({ message: "uid, token, new_password required" });
+    if (!uid || !token || !new_password) {
+      return res
+        .status(400)
+        .json({ message: "uid, token, new_password required" });
+    }
 
     const hashed = crypto.createHash("sha256").update(token).digest("hex");
 
     const prt = await PasswordResetToken.findOne({
-      where: { token_hash: hashed, user_id: uid }
+      where: { token_hash: hashed, user_id: uid },
     });
 
-    if (!prt) return res.status(400).json({ message: "Invalid or expired token" });
-    if (prt.used) return res.status(400).json({ message: "Token already used" });
-    if (new Date(prt.expires_at) < new Date())
-      return res.status(400).json({ message: "Token expired" });
+    if (!prt || prt.used || new Date(prt.expires_at) < new Date()) {
+      return res.status(400).json({ message: "Invalid or expired token" });
+    }
 
     const user = await User.findByPk(uid);
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPwd = await bcrypt.hash(new_password, salt);
+    const hashedPwd = await bcrypt.hash(new_password, 10);
 
     await user.update({ password: hashedPwd });
     await prt.update({ used: true });
 
     return res.json({ message: "Password has been reset" });
-
   } catch (err) {
     console.error("resetPassword error", err);
     return res.status(500).json({ message: "Error resetting password" });
