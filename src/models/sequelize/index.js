@@ -13,7 +13,7 @@ const ManagerCenter = require("./ManagerCenter");
 
 /**
  * ============================
- * EXISTING ASSOCIATIONS
+ * CORE ASSOCIATIONS
  * ============================
  */
 
@@ -29,7 +29,7 @@ User.belongsTo(NGO, { foreignKey: "ngo_id" });
 Center.hasMany(User, { foreignKey: "center_id" });
 User.belongsTo(Center, { foreignKey: "center_id" });
 
-// User → ManagerDetails
+// ✅ User → ManagerDetails (ONLY ONCE!)
 User.hasOne(ManagerDetails, {
   foreignKey: "user_id",
   as: "manager_details",
@@ -40,7 +40,7 @@ ManagerDetails.belongsTo(User, {
 
 /**
  * ============================
- * ✅ NEW: MANAGER ↔ CENTER (MANY TO MANY)
+ * MANAGER ↔ CENTER (MANY TO MANY)
  * ============================
  */
 
