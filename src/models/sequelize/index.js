@@ -29,13 +29,16 @@ User.belongsTo(NGO, { foreignKey: "ngo_id" });
 Center.hasMany(User, { foreignKey: "center_id" });
 User.belongsTo(Center, { foreignKey: "center_id" });
 
-// ✅ User → ManagerDetails (ONLY ONCE!)
+// ============================
+// USER → MANAGER DETAILS (ONLY ONCE)
+// ============================
 User.hasOne(ManagerDetails, {
   foreignKey: "user_id",
   as: "manager_details",
 });
 ManagerDetails.belongsTo(User, {
   foreignKey: "user_id",
+  as: "user",
 });
 
 /**
@@ -47,21 +50,25 @@ ManagerDetails.belongsTo(User, {
 // Manager (User) → ManagerCenter
 User.hasMany(ManagerCenter, {
   foreignKey: "manager_id",
+  as: "managed_centers",
 });
 
 // ManagerCenter → User
 ManagerCenter.belongsTo(User, {
   foreignKey: "manager_id",
+  as: "manager",
 });
 
 // Center → ManagerCenter
 Center.hasMany(ManagerCenter, {
   foreignKey: "center_id",
+  as: "center_managers",
 });
 
 // ManagerCenter → Center
 ManagerCenter.belongsTo(Center, {
   foreignKey: "center_id",
+  as: "center",
 });
 
 module.exports = {
