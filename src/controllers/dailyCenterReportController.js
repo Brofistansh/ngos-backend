@@ -36,12 +36,12 @@ exports.getDailyCenterReports = async (req, res) => {
     const reports = await DailyCenterReport.findAll({
       where,
       include: [
-        {
-          model: Center,
-          as: "center",
-          attributes: ["id", "name"]
-        }
-      ],
+  {
+    model: Center,
+    as: "report_center",
+    attributes: ["id", "name"]
+  }
+],
       order: [["date", "DESC"]]
     });
 

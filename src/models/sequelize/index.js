@@ -140,5 +140,6 @@ Center.hasMany(DailyCenterReport, {
 
 DailyCenterReport.belongsTo(Center, {
   foreignKey: "center_id",
-  as: "center"
+  as: "report_center"
 });
+

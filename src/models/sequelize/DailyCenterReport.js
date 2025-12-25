@@ -77,7 +77,8 @@ const DailyCenterReport = sequelize.define("DailyCenterReport", {
 
 DailyCenterReport.belongsTo(Center, {
   foreignKey: "center_id",
-  as: "center"
+  as: "report_center"
 });
+
 
 module.exports = DailyCenterReport;
