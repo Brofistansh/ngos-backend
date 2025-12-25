@@ -4,10 +4,20 @@ const NGO = require("./NGO");
 const Center = require("./Center");
 
 const Student = sequelize.define("Student", {
+  // 🔑 PRIMARY KEY (OCR READY)
+  roll_no: {
+    type: DataTypes.STRING(11),
+    primaryKey: true,
+    allowNull: false,
+    unique: true
+  },
+
+  // 🆔 Internal UUID (KEEP FOR BACKWARD COMPATIBILITY)
   id: {
     type: DataTypes.UUID,
     defaultValue: DataTypes.UUIDV4,
-    primaryKey: true
+    allowNull: false,
+    unique: true
   },
 
   // -------------------------
@@ -27,8 +37,7 @@ const Student = sequelize.define("Student", {
   },
 
   address: { type: DataTypes.TEXT, allowNull: true },
-
-  student_photo: { type: DataTypes.STRING, allowNull: true }, // Cloudinary URL
+  student_photo: { type: DataTypes.STRING, allowNull: true },
 
   // -------------------------
   // 🔹 EDUCATION DETAILS
@@ -36,7 +45,7 @@ const Student = sequelize.define("Student", {
   school_name: { type: DataTypes.STRING, allowNull: true },
   school_board: { type: DataTypes.STRING, allowNull: true },
 
-  current_class: { type: DataTypes.STRING, allowNull: true },     // e.g., Class 5, Class 6
+  current_class: { type: DataTypes.STRING, allowNull: true },
   class_entering_upay: { type: DataTypes.STRING, allowNull: true },
 
   date_of_joining_upay: { type: DataTypes.DATEONLY, allowNull: true },
@@ -52,15 +61,13 @@ const Student = sequelize.define("Student", {
   mother_occupation: { type: DataTypes.STRING, allowNull: true },
 
   total_family_members: { type: DataTypes.INTEGER, allowNull: true },
-
   contact_number: { type: DataTypes.STRING, allowNull: true },
-
   aadhaar_card: { type: DataTypes.STRING, allowNull: true },
 
   availing_scholarship: { type: DataTypes.BOOLEAN, defaultValue: false },
 
   // -------------------------
-  // 🔹 EXTRA ATTRIBUTES FROM UI
+  // 🔹 EXTRA ATTRIBUTES
   // -------------------------
   hobby: { type: DataTypes.STRING, allowNull: true },
   insurance: { type: DataTypes.BOOLEAN, defaultValue: false },
@@ -72,6 +79,9 @@ const Student = sequelize.define("Student", {
   // -------------------------
   ngo_id: { type: DataTypes.UUID, allowNull: false },
   center_id: { type: DataTypes.UUID, allowNull: false }
+}, {
+  tableName: "students",
+  timestamps: true
 });
 
 // RELATIONS
