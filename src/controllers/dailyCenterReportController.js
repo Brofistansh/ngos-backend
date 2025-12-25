@@ -1,6 +1,10 @@
 const DailyCenterReport = require("../models/sequelize/DailyCenterReport");
 const Center = require("../models/sequelize/Center");
 
+/**
+ * CREATE DAILY CENTER REPORT
+ * posted_by is AUTO from logged-in user
+ */
 exports.createDailyCenterReport = async (req, res) => {
   try {
     const { center_id } = req.body;
@@ -12,19 +16,37 @@ exports.createDailyCenterReport = async (req, res) => {
 
     const report = await DailyCenterReport.create({
       ...req.body,
+
+      // 🔥 AUTO SET (NOT FROM BODY)
+      posted_by: {
+        user_id: req.user.id,
+        name: req.user.name,
+        role: req.user.role
+      },
+
       ngo_id: req.user.ngo_id
     });
 
     res.status(201).json({
       message: "Daily center report created",
-      data: report
+      data: {
+        ...report.toJSON(),
+        center: {
+          id: center.id,
+          name: center.name
+        }
+      }
     });
+
   } catch (err) {
     console.error("Create Daily Center Report Error:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
 
+/**
+ * GET DAILY CENTER REPORTS (FILTER: center_id, date)
+ */
 exports.getDailyCenterReports = async (req, res) => {
   try {
     const { center_id, date } = req.query;
@@ -45,10 +67,19 @@ exports.getDailyCenterReports = async (req, res) => {
       order: [["date", "DESC"]]
     });
 
+    const response = reports.map(r => ({
+      ...r.toJSON(),
+      center: {
+        id: r.report_center.id,
+        name: r.report_center.name
+      }
+    }));
+
     res.json({
-      count: reports.length,
-      data: reports
+      count: response.length,
+      data: response
     });
+
   } catch (err) {
     console.error("Get Daily Center Reports Error:", err);
     res.status(500).json({ message: "Server error" });
