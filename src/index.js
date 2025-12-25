@@ -69,7 +69,8 @@ app.use('/api/student-performance', require('./routes/studentPerformance'));
 
 app.use("/api/stock", require("./routes/stock"));
 
-app.use("/api/daily-center-reports", require("./dailyCenterReport"));
+const dailyCenterReportRoutes = require("./routes/dailyCenterReport");
+app.use("/api/daily-center-report", dailyCenterReportRoutes);
 
 
 // ------------------------------
