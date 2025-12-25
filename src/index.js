@@ -85,6 +85,9 @@ const activityTypeRoutes = require("./routes/activityTypeRoutes");
 
 app.use("/api/activity-types", activityTypeRoutes);
 
+app.use("/api/activities", require("./routes/activities"));
+
+
 
 // ------------------------------
 // SWAGGER DOCS

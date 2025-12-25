@@ -159,3 +159,14 @@ Visit.belongsTo(Center, {
   foreignKey: "center_id",
   as: "visit_center"
 });
+
+const CenterActivity = require("./CenterActivity");
+
+Center.hasMany(CenterActivity, {
+  foreignKey: "center_id",
+});
+
+CenterActivity.belongsTo(Center, {
+  foreignKey: "center_id",
+  as: "activity_center",
+});
