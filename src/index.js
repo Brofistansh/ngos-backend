@@ -75,7 +75,9 @@ app.use("/api/daily-center-report", dailyCenterReportRoutes);
 const visitRoutes = require("./routes/visits");
 app.use("/api/visits", visitRoutes);
 
-app.use("/api/student-attendance", require("./routes/studentAttendance"));
+// app.use("/api/student-attendance", require("./routes/studentAttendance"));
+
+app.use("/api/student-attendance", require("./routes/studentAttendanceBulk"));
 
 
 // ------------------------------
