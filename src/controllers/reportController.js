@@ -1,7 +1,7 @@
 // src/controllers/reportController.js
 const { Op } = require('sequelize');
 const Attendance = require('../models/sequelize/Attendance');
-const StudentAttendance = require('../models/sequelize/StudentAttendance');
+const StudentAttendance = require('../models/sequelize/StudentAttendanceLegacy');
 
 /* ---------- helper utils ---------- */
 

@@ -1,8 +1,8 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../../db/postgres");
 
-const StudentAttendance = sequelize.define(
-  "StudentAttendance",
+const StudentAttendanceEntry = sequelize.define(
+  "StudentAttendanceEntry",
   {
     id: {
       type: DataTypes.UUID,
@@ -10,28 +10,23 @@ const StudentAttendance = sequelize.define(
       primaryKey: true
     },
 
+    attendance_id: {
+      type: DataTypes.UUID,
+      allowNull: false
+    },
+
     student_id: {
       type: DataTypes.UUID,
       allowNull: false
     },
 
-    center_id: {
-      type: DataTypes.UUID,
-      allowNull: false
-    },
-
-    date: {
-      type: DataTypes.DATEONLY,
+    roll_no: {
+      type: DataTypes.STRING(11),
       allowNull: false
     },
 
     status: {
       type: DataTypes.ENUM("present", "absent", "leave"),
-      allowNull: false
-    },
-
-    marked_by: {
-      type: DataTypes.UUID,
       allowNull: false
     },
 
@@ -41,10 +36,15 @@ const StudentAttendance = sequelize.define(
     }
   },
   {
-    tableName: "student_attendance",
+    tableName: "student_attendance_entries",
     timestamps: true,
-    indexes: [{ unique: true, fields: ["student_id", "date"] }]
+    indexes: [
+      {
+        unique: true,
+        fields: ["attendance_id", "roll_no"]
+      }
+    ]
   }
 );
 
-module.exports = StudentAttendance;
+module.exports = StudentAttendanceEntry;

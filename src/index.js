@@ -48,7 +48,7 @@ app.use('/api/users', require('./routes/user'));
 
 app.use('/api/students', require('./routes/student')); // ✅ ONLY ONCE
 
-app.use('/api/student-attendance', require('./routes/studentAttendance'));
+app.use('/api/student-attendance-legacy', require('./routes/studentAttendance'));
 app.use('/api/teacher-attendance', require('./routes/teacherAttendance'));
 
 app.use('/api/teachers', require('./routes/teacher'));
@@ -74,6 +74,8 @@ app.use("/api/daily-center-report", dailyCenterReportRoutes);
 
 const visitRoutes = require("./routes/visits");
 app.use("/api/visits", visitRoutes);
+
+app.use("/api/student-attendance-v2", require("./routes/studentAttendanceV2"));
 
 
 // ------------------------------
