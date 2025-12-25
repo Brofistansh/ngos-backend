@@ -10,9 +10,11 @@ const multer = require("multer");
 const upload = multer({ dest: "uploads/" });
 
 // Roles allowed to manage students
-const allowedRoles = ["super_admin", "ngo_admin", "center_admin","teacher"];
+const allowedRoles = ["super_admin", "ngo_admin", "center_admin", "teacher"];
 
+// ============================
 // CREATE student
+// ============================
 router.post(
   "/",
   auth,
@@ -21,7 +23,9 @@ router.post(
   studentController.createStudent
 );
 
+// ============================
 // GET all students
+// ============================
 router.get(
   "/",
   auth,
@@ -29,7 +33,20 @@ router.get(
   studentController.getStudents
 );
 
-// GET student by ID ✅ FIXED
+// ============================
+// 🔥 GET student by ROLL NO (NEW)
+// IMPORTANT: must be BEFORE :id
+// ============================
+router.get(
+  "/roll/:roll_no",
+  auth,
+  roles(...allowedRoles),
+  studentController.getStudentByRollNo
+);
+
+// ============================
+// GET student by ID (UUID)
+// ============================
 router.get(
   "/:id",
   auth,
@@ -37,7 +54,9 @@ router.get(
   studentController.getStudentById
 );
 
+// ============================
 // UPDATE student
+// ============================
 router.put(
   "/:id",
   auth,
@@ -46,7 +65,9 @@ router.put(
   studentController.updateStudent
 );
 
+// ============================
 // DELETE (soft delete)
+// ============================
 router.delete(
   "/:id",
   auth,

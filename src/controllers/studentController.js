@@ -162,3 +162,30 @@ exports.deleteStudent = async (req, res) => {
     res.status(500).json({ message: "Error deleting student" });
   }
 };
+// ============================
+// GET STUDENT BY ROLL NO
+// ============================
+exports.getStudentByRollNo = async (req, res) => {
+  try {
+    const { roll_no } = req.params;
+
+    const student = await Student.findOne({
+      where: { roll_no }
+    });
+
+    if (!student) {
+      return res.status(404).json({
+        message: "Student not found with this roll number"
+      });
+    }
+
+    res.json({
+      success: true,
+      data: student
+    });
+
+  } catch (err) {
+    console.error("Error fetching student by roll no:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
