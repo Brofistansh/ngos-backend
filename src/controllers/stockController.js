@@ -1,29 +1,39 @@
 const { Op } = require("sequelize");
+const sequelize = require("../db/postgres");
+
 const StockHeader = require("../models/sequelize/StockHeader");
 const StockEntry = require("../models/sequelize/StockEntry");
 const Teacher = require("../models/sequelize/Teacher");
 const User = require("../models/sequelize/User");
 
 /**
- * ==================================================
- * CREATE STOCK (TEACHER ONLY)
- * ==================================================
+ * ======================================================
+ * CREATE STOCK
+ * ======================================================
+ * ROLE: teacher only
+ * Teacher creates stock + multiple entries
  */
 exports.createStock = async (req, res) => {
-  try {
-    const { entries } = req.body;
+  const t = await sequelize.transaction();
 
-    if (!entries || !Array.isArray(entries) || entries.length === 0) {
-      return res.status(400).json({ message: "entries array is required" });
+  try {
+    if (req.user.role !== "teacher") {
+      return res.status(403).json({ message: "Only teacher can create stock" });
     }
 
-    // 🔐 Find logged-in teacher with user
+    const { entries } = req.body;
+
+    if (!Array.isArray(entries) || entries.length === 0) {
+      return res.status(400).json({ message: "Entries are required" });
+    }
+
+    // 🔐 get teacher + user (CORRECT alias usage)
     const teacher = await Teacher.findOne({
       where: { user_id: req.user.id },
       include: [
         {
           model: User,
-          as: "user", // ✅ MUST MATCH ASSOCIATION
+          as: "user", // 👈 VERY IMPORTANT (alias)
           attributes: ["id", "name"],
         },
       ],
@@ -33,81 +43,78 @@ exports.createStock = async (req, res) => {
       return res.status(404).json({ message: "Teacher not found" });
     }
 
-    // =============================
+    // ============================
     // CREATE STOCK HEADER
-    // =============================
-    const stockHeader = await StockHeader.create({
-      teacher_id: teacher.id,
-      teacher_name: teacher.user.name, // ✅ FIXED
-      center_id: req.user.center_id,
-      ngo_id: req.user.ngo_id,
-      created_by: req.user.id,
-    });
+    // ============================
+    const stockHeader = await StockHeader.create(
+      {
+        teacher_id: teacher.id,
+        teacher_name: teacher.user.name,
+        ngo_id: req.user.ngo_id,
+        center_id: req.user.center_id,
+        created_by: req.user.id,
+      },
+      { transaction: t }
+    );
 
-    // =============================
+    // ============================
     // CREATE STOCK ENTRIES
-    // (snake_case + camelCase SAFE)
-    // =============================
+    // ============================
     const stockEntries = entries.map((e) => ({
-      stock_header_id: stockHeader.id,
+      stock_id: stockHeader.id, // 🔥 THIS FIXES YOUR ERROR
       date: e.date,
       particulars: e.particulars,
-
-      bill_no: e.bill_no || e.billNo || null,
-
-      receipt_qty: e.receipt_qty ?? e.receiptQty ?? 0,
-      issue_qty: e.issue_qty ?? e.issueQty ?? 0,
-      balance_qty: e.balance_qty ?? e.balanceQty ?? 0,
-
+      bill_no: e.bill_no,
+      receipt_qty: e.receipt_qty || 0,
+      issue_qty: e.issue_qty || 0,
+      balance_qty: e.balance_qty || 0,
       remarks: e.remarks || null,
     }));
 
-    await StockEntry.bulkCreate(stockEntries);
+    await StockEntry.bulkCreate(stockEntries, { transaction: t });
+
+    await t.commit();
 
     return res.status(201).json({
       message: "Stock created successfully",
-      data: {
-        stock_id: stockHeader.id,
-        teacher: {
-          id: teacher.id,
-          name: teacher.user.name,
-        },
-      },
+      stock_id: stockHeader.id,
     });
 
   } catch (err) {
+    await t.rollback();
     console.error("Create Stock Error:", err);
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
-
 /**
- * ==================================================
+ * ======================================================
  * GET STOCK
- * ==================================================
- * Teacher → own center
- * Manager → by center_id
- * Super Admin → all
+ * ======================================================
+ * ROLE:
+ * teacher        → own stock
+ * manager/admin  → view only (by center)
  */
 exports.getStock = async (req, res) => {
   try {
     const { role, center_id } = req.user;
-    const { centerId, from_date, to_date } = req.query;
+    const { from_date, to_date } = req.query;
 
     const where = {};
 
     if (role === "teacher") {
-      where.center_id = center_id;
-    }
+      const teacher = await Teacher.findOne({
+        where: { user_id: req.user.id },
+      });
 
-    if (role === "manager") {
-      if (!centerId) {
-        return res.status(400).json({
-          message: "centerId is required for manager",
-        });
+      if (!teacher) {
+        return res.status(404).json({ message: "Teacher not found" });
       }
-      where.center_id = centerId;
+
+      where.teacher_id = teacher.id;
+    } else {
+      // manager / admin → center based
+      where.center_id = center_id;
     }
 
     if (from_date && to_date) {
@@ -127,13 +134,13 @@ exports.getStock = async (req, res) => {
       ],
     });
 
-    res.json({
+    return res.json({
       count: data.length,
       data,
     });
 
   } catch (err) {
     console.error("Get Stock Error:", err);
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: "Server error" });
   }
 };
