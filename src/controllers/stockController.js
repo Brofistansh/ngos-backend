@@ -6,25 +6,24 @@ const User = require("../models/sequelize/User");
 
 /**
  * ==================================================
- * CREATE STOCK
+ * CREATE STOCK (TEACHER ONLY)
  * ==================================================
- * ONLY TEACHER CAN CREATE
  */
 exports.createStock = async (req, res) => {
   try {
     const { entries } = req.body;
 
     if (!entries || !Array.isArray(entries) || entries.length === 0) {
-      return res.status(400).json({ message: "Stock entries are required" });
+      return res.status(400).json({ message: "entries array is required" });
     }
 
-    // 🔐 Logged-in teacher
+    // 🔐 Find logged-in teacher with user
     const teacher = await Teacher.findOne({
       where: { user_id: req.user.id },
       include: [
         {
           model: User,
-          as: "user", // ✅ IMPORTANT (ALIAS FIX)
+          as: "user", // ✅ MUST MATCH ASSOCIATION
           attributes: ["id", "name"],
         },
       ],
@@ -47,15 +46,19 @@ exports.createStock = async (req, res) => {
 
     // =============================
     // CREATE STOCK ENTRIES
+    // (snake_case + camelCase SAFE)
     // =============================
     const stockEntries = entries.map((e) => ({
       stock_header_id: stockHeader.id,
       date: e.date,
       particulars: e.particulars,
-      bill_no: e.billNo,
-      receipt_qty: e.receiptQty || 0,
-      issue_qty: e.issueQty || 0,
-      balance_qty: e.balanceQty || 0,
+
+      bill_no: e.bill_no || e.billNo || null,
+
+      receipt_qty: e.receipt_qty ?? e.receiptQty ?? 0,
+      issue_qty: e.issue_qty ?? e.issueQty ?? 0,
+      balance_qty: e.balance_qty ?? e.balanceQty ?? 0,
+
       remarks: e.remarks || null,
     }));
 
@@ -83,11 +86,9 @@ exports.createStock = async (req, res) => {
  * ==================================================
  * GET STOCK
  * ==================================================
- * ROLES:
- * - teacher       → own center
- * - manager       → assigned centers
- * - super_admin   → all
- * FILTER: center_id
+ * Teacher → own center
+ * Manager → by center_id
+ * Super Admin → all
  */
 exports.getStock = async (req, res) => {
   try {
@@ -96,9 +97,6 @@ exports.getStock = async (req, res) => {
 
     const where = {};
 
-    // -----------------------------
-    // ROLE BASED ACCESS
-    // -----------------------------
     if (role === "teacher") {
       where.center_id = center_id;
     }
@@ -112,11 +110,6 @@ exports.getStock = async (req, res) => {
       where.center_id = centerId;
     }
 
-    // super_admin → no restriction
-
-    // -----------------------------
-    // DATE FILTER
-    // -----------------------------
     if (from_date && to_date) {
       where.createdAt = {
         [Op.between]: [from_date, to_date],
