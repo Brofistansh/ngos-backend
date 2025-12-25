@@ -5,9 +5,10 @@ const Teacher = require("../models/sequelize/Teacher");
 const User = require("../models/sequelize/User");
 
 /**
- * ============================
- * CREATE STOCK (ONLY TEACHER)
- * ============================
+ * ==================================================
+ * CREATE STOCK
+ * ==================================================
+ * ONLY TEACHER CAN CREATE
  */
 exports.createStock = async (req, res) => {
   try {
@@ -17,28 +18,38 @@ exports.createStock = async (req, res) => {
       return res.status(400).json({ message: "Stock entries are required" });
     }
 
-    // 🔐 Teacher only
+    // 🔐 Logged-in teacher
     const teacher = await Teacher.findOne({
       where: { user_id: req.user.id },
-      include: [{ model: User, attributes: ["name"] }],
+      include: [
+        {
+          model: User,
+          as: "user", // ✅ IMPORTANT (ALIAS FIX)
+          attributes: ["id", "name"],
+        },
+      ],
     });
 
     if (!teacher) {
-      return res.status(403).json({ message: "Only teacher can create stock" });
+      return res.status(404).json({ message: "Teacher not found" });
     }
 
-    const teacherName = teacher.User?.name || "Unknown Teacher";
-
-    const header = await StockHeader.create({
+    // =============================
+    // CREATE STOCK HEADER
+    // =============================
+    const stockHeader = await StockHeader.create({
       teacher_id: teacher.id,
-      teacher_name: teacherName,
-      ngo_id: req.user.ngo_id,
+      teacher_name: teacher.user.name, // ✅ FIXED
       center_id: req.user.center_id,
+      ngo_id: req.user.ngo_id,
       created_by: req.user.id,
     });
 
+    // =============================
+    // CREATE STOCK ENTRIES
+    // =============================
     const stockEntries = entries.map((e) => ({
-      stock_header_id: header.id,
+      stock_header_id: stockHeader.id,
       date: e.date,
       particulars: e.particulars,
       bill_no: e.billNo,
@@ -53,11 +64,11 @@ exports.createStock = async (req, res) => {
     return res.status(201).json({
       message: "Stock created successfully",
       data: {
-        postedBy: {
-          teacherId: teacher.id,
-          teacherName,
+        stock_id: stockHeader.id,
+        teacher: {
+          id: teacher.id,
+          name: teacher.user.name,
         },
-        entries: stockEntries,
       },
     });
 
@@ -69,41 +80,64 @@ exports.createStock = async (req, res) => {
 
 
 /**
- * ============================
- * GET STOCK (VIEW ONLY)
- * teacher → own
- * manager / admin → by center
- * ============================
+ * ==================================================
+ * GET STOCK
+ * ==================================================
+ * ROLES:
+ * - teacher       → own center
+ * - manager       → assigned centers
+ * - super_admin   → all
+ * FILTER: center_id
  */
 exports.getStock = async (req, res) => {
   try {
-    const { role, id, center_id } = req.user;
-    const { centerId } = req.query;
+    const { role, center_id } = req.user;
+    const { centerId, from_date, to_date } = req.query;
 
     const where = {};
 
+    // -----------------------------
+    // ROLE BASED ACCESS
+    // -----------------------------
     if (role === "teacher") {
-      const teacher = await Teacher.findOne({ where: { user_id: id } });
-      if (!teacher) return res.status(404).json({ message: "Teacher not found" });
-      where.teacher_id = teacher.id;
+      where.center_id = center_id;
     }
 
-    if (role === "center_admin" || role === "ngo_admin") {
-      where.center_id = centerId || center_id;
+    if (role === "manager") {
+      if (!centerId) {
+        return res.status(400).json({
+          message: "centerId is required for manager",
+        });
+      }
+      where.center_id = centerId;
+    }
+
+    // super_admin → no restriction
+
+    // -----------------------------
+    // DATE FILTER
+    // -----------------------------
+    if (from_date && to_date) {
+      where.createdAt = {
+        [Op.between]: [from_date, to_date],
+      };
     }
 
     const data = await StockHeader.findAll({
       where,
+      order: [["createdAt", "DESC"]],
       include: [
         {
           model: StockEntry,
           as: "entries",
         },
       ],
-      order: [["createdAt", "DESC"]],
     });
 
-    res.json({ count: data.length, data });
+    res.json({
+      count: data.length,
+      data,
+    });
 
   } catch (err) {
     console.error("Get Stock Error:", err);
