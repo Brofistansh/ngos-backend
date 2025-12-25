@@ -37,7 +37,7 @@ const StudentAttendanceBulk = sequelize.define(
   },
   {
     tableName: "student_attendance_bulk",
-    timestamps: true
+    timestamps: false   // 🔥 THIS LINE FIXES EVERYTHING
   }
 );
 
