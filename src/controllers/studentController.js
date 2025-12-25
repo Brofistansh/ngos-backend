@@ -1,28 +1,59 @@
-const fs = require("fs");
+const fs = require('fs');
 const cloudinary = require("cloudinary").v2;
+const { Op } = require("sequelize");
 
 const Student = require("../models/sequelize/Student");
 const NGO = require("../models/sequelize/NGO");
 const Center = require("../models/sequelize/Center");
-const { generateRollNo } = require("../utils/generateRollNo");
 
+/**
+ * 🔢 ROLL NUMBER GENERATOR
+ * FORMAT: YY + ZONE(3) + CENTER(3) + SEQ(001)
+ * Example: 25DELNAN001
+ */
+async function generateRollNo(center) {
+  const year = new Date().getFullYear().toString().slice(-2);
+
+  const zoneCode = (center.zone || "ZZZ")
+    .replace(/[^A-Za-z]/g, "")
+    .substring(0, 3)
+    .toUpperCase();
+
+  const centerCode = (center.name || "CCC")
+    .replace(/[^A-Za-z]/g, "")
+    .substring(0, 3)
+    .toUpperCase();
+
+  const prefix = `${year}${zoneCode}${centerCode}`;
+
+  const lastStudent = await Student.findOne({
+    where: {
+      roll_no: { [Op.like]: `${prefix}%` }
+    },
+    order: [["createdAt", "DESC"]],
+  });
+
+  let seq = "001";
+  if (lastStudent) {
+    const lastSeq = parseInt(lastStudent.roll_no.slice(-3));
+    seq = String(lastSeq + 1).padStart(3, "0");
+  }
+
+  return `${prefix}${seq}`;
+}
+
+// ============================
+// CREATE STUDENT
+// ============================
 exports.createStudent = async (req, res) => {
   try {
-    const { ngo_id, center_id, zone_code } = req.body;
+    const { ngo_id, center_id } = req.body;
 
     const ngo = await NGO.findByPk(ngo_id);
     if (!ngo) return res.status(404).json({ message: "NGO not found" });
 
     const center = await Center.findByPk(center_id);
     if (!center) return res.status(404).json({ message: "Center not found" });
-
-    const enrollmentYear = new Date().getFullYear();
-
-    const roll_no = await generateRollNo({
-      enrollmentYear,
-      zoneCode: zone_code,
-      centerCode: center.name
-    });
 
     let student_photo = null;
 
@@ -32,9 +63,12 @@ exports.createStudent = async (req, res) => {
       });
       student_photo = upload.secure_url;
       fs.unlinkSync(req.file.path);
-    } else if (req.body.student_photo?.trim()) {
+    } else if (req.body.student_photo && req.body.student_photo.trim() !== "") {
       student_photo = req.body.student_photo.trim();
     }
+
+    // 🔥 ONLY NEW LINE
+    const roll_no = await generateRollNo(center);
 
     const student = await Student.create({
       ...req.body,
@@ -46,41 +80,49 @@ exports.createStudent = async (req, res) => {
       message: "Student created successfully",
       data: student
     });
-
   } catch (err) {
     console.error("Error creating student:", err);
-    res.status(500).json({ message: "Error creating student" });
+    res.status(500).json({ message: "Error creating student", error: err.message });
   }
 };
 
+// ============================
+// GET STUDENTS
+// ============================
 exports.getStudents = async (req, res) => {
   try {
+    const { ngo_id, center_id } = req.query;
     const where = {};
-    if (req.query.ngo_id) where.ngo_id = req.query.ngo_id;
-    if (req.query.center_id) where.center_id = req.query.center_id;
+    if (ngo_id) where.ngo_id = ngo_id;
+    if (center_id) where.center_id = center_id;
 
     const students = await Student.findAll({ where });
     res.json({ count: students.length, data: students });
-  } catch {
+  } catch (err) {
     res.status(500).json({ message: "Error fetching students" });
   }
 };
 
-// 🔑 NOW USE roll_no
+// ============================
+// GET STUDENT BY ID
+// ============================
 exports.getStudentById = async (req, res) => {
   try {
-    const student = await Student.findByPk(req.params.roll_no);
+    const student = await Student.findByPk(req.params.id);
     if (!student) return res.status(404).json({ message: "Student not found" });
 
-    res.json({ data: student });
-  } catch {
+    res.json({ success: true, data: student });
+  } catch (err) {
     res.status(500).json({ message: "Server error" });
   }
 };
 
+// ============================
+// UPDATE STUDENT
+// ============================
 exports.updateStudent = async (req, res) => {
   try {
-    const student = await Student.findByPk(req.params.roll_no);
+    const student = await Student.findByPk(req.params.id);
     if (!student) return res.status(404).json({ message: "Student not found" });
 
     let student_photo = student.student_photo;
@@ -91,26 +133,32 @@ exports.updateStudent = async (req, res) => {
       });
       student_photo = upload.secure_url;
       fs.unlinkSync(req.file.path);
-    } else if (req.body.student_photo?.trim()) {
+    } else if (req.body.student_photo && req.body.student_photo.trim() !== "") {
       student_photo = req.body.student_photo.trim();
     }
 
-    await student.update({ ...req.body, student_photo });
+    await student.update({
+      ...req.body,
+      student_photo
+    });
 
     res.json({ message: "Student updated", data: student });
-  } catch {
+  } catch (err) {
     res.status(500).json({ message: "Error updating student" });
   }
 };
 
+// ============================
+// DELETE (SOFT)
+// ============================
 exports.deleteStudent = async (req, res) => {
   try {
-    const student = await Student.findByPk(req.params.roll_no);
+    const student = await Student.findByPk(req.params.id);
     if (!student) return res.status(404).json({ message: "Student not found" });
 
     await student.update({ student_status: "inactive" });
     res.json({ message: "Student deactivated" });
-  } catch {
+  } catch (err) {
     res.status(500).json({ message: "Error deleting student" });
   }
 };
