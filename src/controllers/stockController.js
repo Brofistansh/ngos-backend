@@ -6,6 +6,37 @@ const StockEntry = require("../models/sequelize/StockEntry");
 const Teacher = require("../models/sequelize/Teacher");
 const User = require("../models/sequelize/User");
 
+exports.deleteStockEntry = async (req, res) => {
+  try {
+    const entry = await StockEntry.findByPk(req.params.id);
+    if (!entry) return res.status(404).json({ message: "Entry not found" });
+
+    await entry.destroy();
+
+    res.json({ message: "Stock entry deleted" });
+  } catch (err) {
+    console.error("Delete Stock Entry Error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+exports.updateStockEntry = async (req, res) => {
+  try {
+    const entry = await StockEntry.findByPk(req.params.id);
+    if (!entry) return res.status(404).json({ message: "Entry not found" });
+
+    await entry.update(req.body);
+
+    res.json({
+      message: "Stock entry updated",
+      data: entry,
+    });
+  } catch (err) {
+    console.error("Update Stock Entry Error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 /**
  * ======================================================
  * CREATE STOCK

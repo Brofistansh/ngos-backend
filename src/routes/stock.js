@@ -5,20 +5,28 @@ const auth = require("../middlewares/authMiddleware");
 const roles = require("../middlewares/roleMiddleware");
 const controller = require("../controllers/stockController");
 
-// CREATE → ONLY TEACHER
-router.post(
-  "/",
+// CREATE
+router.post("/", auth, roles("teacher"), controller.createStock);
+
+// GET
+router.get("/my", auth, roles("teacher"), controller.getStock);
+router.get("/", auth, roles("manager", "super_admin"), controller.getStock);
+router.get("/filter", auth, roles("manager", "super_admin"), controller.getStock);
+
+// UPDATE ENTRY
+router.put(
+  "/entry/:id",
   auth,
   roles("teacher"),
-  controller.createStock
+  controller.updateStockEntry
 );
 
-// GET → TEACHER / MANAGER / ADMIN
-router.get(
-  "/",
+// DELETE ENTRY
+router.delete(
+  "/entry/:id",
   auth,
-  roles("teacher", "center_admin", "ngo_admin", "super_admin"),
-  controller.getStock
+  roles("teacher"),
+  controller.deleteStockEntry
 );
 
 module.exports = router;
