@@ -130,3 +130,15 @@ Teacher.belongsTo(User, {
   foreignKey: "user_id",
   as: "user",
 });
+
+
+const DailyCenterReport = require("./DailyCenterReport");
+
+Center.hasMany(DailyCenterReport, {
+  foreignKey: "center_id"
+});
+
+DailyCenterReport.belongsTo(Center, {
+  foreignKey: "center_id",
+  as: "center"
+});

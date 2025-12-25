@@ -69,6 +69,8 @@ app.use('/api/student-performance', require('./routes/studentPerformance'));
 
 app.use("/api/stock", require("./routes/stock"));
 
+app.use("/api/daily-center-reports", require("./dailyCenterReport"));
+
 
 // ------------------------------
 // SWAGGER DOCS
