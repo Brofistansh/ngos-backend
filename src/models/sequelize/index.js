@@ -103,3 +103,17 @@ module.exports = {
   ManagerCenter,
   TeacherTimesheet, // ✅ EXPORT THIS
 };
+
+const StockHeader = require("./StockHeader");
+const StockEntry = require("./StockEntry");
+
+// Stock Header → Entries
+StockHeader.hasMany(StockEntry, {
+  foreignKey: "stock_id",
+  as: "entries",
+});
+
+StockEntry.belongsTo(StockHeader, {
+  foreignKey: "stock_id",
+  as: "stock",
+});

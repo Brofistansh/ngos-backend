@@ -67,6 +67,9 @@ app.use('/api/student-timesheet', require('./routes/studentTimesheet'));
 app.use('/api/teacher-timesheet', require('./routes/teacherTimesheet'));
 app.use('/api/student-performance', require('./routes/studentPerformance'));
 
+app.use("/api/stock", require("./routes/stock"));
+
+
 // ------------------------------
 // SWAGGER DOCS
 // ------------------------------
