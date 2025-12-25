@@ -79,6 +79,12 @@ app.use("/api/visits", visitRoutes);
 
 app.use("/api/student-attendance", require("./routes/studentAttendanceBulk"));
 
+// src/index.js
+
+const activityTypeRoutes = require("./routes/activityTypeRoutes");
+
+app.use("/api/activity-types", activityTypeRoutes);
+
 
 // ------------------------------
 // SWAGGER DOCS
