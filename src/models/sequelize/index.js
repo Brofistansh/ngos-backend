@@ -117,3 +117,16 @@ StockEntry.belongsTo(StockHeader, {
   foreignKey: "stock_id",
   as: "stock",
 });
+
+// ============================
+// USER ↔ TEACHER (ADD THIS)
+// ============================
+User.hasOne(Teacher, {
+  foreignKey: "user_id",
+  as: "teacher_profile",
+});
+
+Teacher.belongsTo(User, {
+  foreignKey: "user_id",
+  as: "user",
+});
