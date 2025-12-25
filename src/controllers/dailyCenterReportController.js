@@ -3,7 +3,7 @@ const Center = require("../models/sequelize/Center");
 
 exports.createDailyCenterReport = async (req, res) => {
   try {
-    const { center_id, date } = req.body;
+    const { center_id } = req.body;
 
     const center = await Center.findByPk(center_id);
     if (!center) {
@@ -19,12 +19,12 @@ exports.createDailyCenterReport = async (req, res) => {
       message: "Daily center report created",
       data: report
     });
-
   } catch (err) {
     console.error("Create Daily Center Report Error:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
+
 exports.getDailyCenterReports = async (req, res) => {
   try {
     const { center_id, date } = req.query;
@@ -36,12 +36,12 @@ exports.getDailyCenterReports = async (req, res) => {
     const reports = await DailyCenterReport.findAll({
       where,
       include: [
-  {
-    model: Center,
-    as: "report_center",
-    attributes: ["id", "name"]
-  }
-],
+        {
+          model: Center,
+          as: "report_center",
+          attributes: ["id", "name"]
+        }
+      ],
       order: [["date", "DESC"]]
     });
 
@@ -49,7 +49,6 @@ exports.getDailyCenterReports = async (req, res) => {
       count: reports.length,
       data: reports
     });
-
   } catch (err) {
     console.error("Get Daily Center Reports Error:", err);
     res.status(500).json({ message: "Server error" });
