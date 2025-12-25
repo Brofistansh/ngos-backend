@@ -72,6 +72,9 @@ app.use("/api/stock", require("./routes/stock"));
 const dailyCenterReportRoutes = require("./routes/dailyCenterReport");
 app.use("/api/daily-center-report", dailyCenterReportRoutes);
 
+const visitRoutes = require("./routes/visits");
+app.use("/api/visits", visitRoutes);
+
 
 // ------------------------------
 // SWAGGER DOCS

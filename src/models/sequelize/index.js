@@ -143,3 +143,14 @@ module.exports = {
   StockEntry,
   DailyCenterReport
 };
+const Visit = require("./Visit");
+
+Center.hasMany(Visit, {
+  foreignKey: "center_id",
+  as: "visits"
+});
+
+Visit.belongsTo(Center, {
+  foreignKey: "center_id",
+  as: "visit_center"
+});
