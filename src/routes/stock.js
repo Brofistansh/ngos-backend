@@ -5,7 +5,7 @@ const auth = require("../middlewares/authMiddleware");
 const roles = require("../middlewares/roleMiddleware");
 const controller = require("../controllers/stockController");
 
-// CREATE – Teacher only
+// CREATE → ONLY TEACHER
 router.post(
   "/",
   auth,
@@ -13,7 +13,7 @@ router.post(
   controller.createStock
 );
 
-// GET – Teacher, Manager, Admin
+// GET → TEACHER / MANAGER / ADMIN
 router.get(
   "/",
   auth,
