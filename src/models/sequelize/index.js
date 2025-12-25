@@ -145,6 +145,11 @@ module.exports = {
 };
 const Visit = require("./Visit");
 
+/**
+ * ============================
+ * VISIT ↔ CENTER
+ * ============================
+ */
 Center.hasMany(Visit, {
   foreignKey: "center_id",
   as: "visits"
