@@ -9,7 +9,7 @@ const controller = require("../controllers/stockController");
 router.post("/", auth, roles("teacher"), controller.createStock);
 
 // GET
-router.get("/my", auth, roles("teacher"), controller.getStock);
+router.get("/", auth, roles("teacher"), controller.getStock);
 router.get("/", auth, roles("manager", "super_admin"), controller.getStock);
 router.get("/filter", auth, roles("manager", "super_admin"), controller.getStock);
 
