@@ -1,6 +1,5 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../../db/postgres");
-const Center = require("./Center");
 
 const CenterActivity = sequelize.define(
   "CenterActivity",
@@ -71,11 +70,5 @@ const CenterActivity = sequelize.define(
     timestamps: true,
   }
 );
-
-// 🔗 ASSOCIATION
-CenterActivity.belongsTo(Center, {
-  foreignKey: "center_id",
-  as: "activity_center",
-});
 
 module.exports = CenterActivity;

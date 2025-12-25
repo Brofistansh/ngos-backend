@@ -162,6 +162,7 @@ Visit.belongsTo(Center, {
 
 const CenterActivity = require("./CenterActivity");
 
+// ✅ SINGLE SOURCE OF TRUTH
 Center.hasMany(CenterActivity, {
   foreignKey: "center_id",
 });
