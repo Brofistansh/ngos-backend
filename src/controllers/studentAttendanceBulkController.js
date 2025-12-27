@@ -2,6 +2,8 @@ const StudentAttendanceBulk = require("../models/sequelize/StudentAttendanceBulk
 const Center = require("../models/sequelize/Center");
 const Student = require("../models/sequelize/Student");
 
+/* ================= CREATE BULK ATTENDANCE ================= */
+
 exports.createBulkAttendance = async (req, res) => {
   try {
     const { date, center_id, students } = req.body;
@@ -26,7 +28,7 @@ exports.createBulkAttendance = async (req, res) => {
       records: students
     });
 
-    /* ================= ENRICH RESPONSE ================= */
+    /* ===== ENRICH RESPONSE ===== */
 
     const rollNos = students.map(s => s.roll_no);
 
@@ -75,6 +77,8 @@ exports.createBulkAttendance = async (req, res) => {
   }
 };
 
+/* ================= GET ATTENDANCE ================= */
+
 exports.getAttendance = async (req, res) => {
   try {
     const { date, start_date, end_date, center_id, roll_no } = req.query;
@@ -95,7 +99,7 @@ exports.getAttendance = async (req, res) => {
       );
     }
 
-    /* ================= ENRICH RESPONSE ================= */
+    /* ===== ENRICH RESPONSE ===== */
 
     const rollNos = new Set();
     data.forEach(d => {
@@ -145,6 +149,45 @@ exports.getAttendance = async (req, res) => {
       data: enrichedData
     });
 
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+/* ================= UPDATE ATTENDANCE ================= */
+
+exports.updateAttendance = async (req, res) => {
+  try {
+    const record = await StudentAttendanceBulk.findByPk(req.params.id);
+    if (!record) {
+      return res.status(404).json({ message: "Not found" });
+    }
+
+    await record.update(req.body);
+
+    res.json({
+      message: "Updated",
+      data: record
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+/* ================= DELETE ATTENDANCE ================= */
+
+exports.deleteAttendance = async (req, res) => {
+  try {
+    const record = await StudentAttendanceBulk.findByPk(req.params.id);
+    if (!record) {
+      return res.status(404).json({ message: "Not found" });
+    }
+
+    await record.destroy();
+
+    res.json({ message: "Deleted" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });
