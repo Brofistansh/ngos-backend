@@ -5,14 +5,41 @@ const auth = require("../middlewares/authMiddleware");
 const roles = require("../middlewares/roleMiddleware");
 const ctrl = require("../controllers/studentPerformanceController");
 
-router.post("/", auth, roles("teacher","ngo_admin","center_admin","super_admin"), ctrl.createStudentPerformanceReport);
+/* CREATE (single + bulk) */
+router.post(
+  "/bulk",
+  auth,
+  roles("teacher", "center_admin", "ngo_admin", "super_admin"),
+  ctrl.bulkUploadStudentPerformance
+);
 
-router.get("/", auth, ctrl.getReportsByStudent);
+/* READ by roll number */
+router.get(
+  "/",
+  auth,
+  ctrl.getByRollNo
+);
 
-router.get("/:id", auth, ctrl.getReportById);
+/* READ center monthly */
+router.get(
+  "/monthly",
+  auth,
+  ctrl.getCenterMonthly
+);
 
-router.put("/:id", auth, roles("teacher","ngo_admin"), ctrl.updateReport);
+/* READ single record */
+router.get(
+  "/:id",
+  auth,
+  ctrl.getPerformanceById
+);
 
-router.delete("/:id", auth, roles("ngo_admin","super_admin"), ctrl.deleteReport);
+/* DELETE (admin only) */
+router.delete(
+  "/:id",
+  auth,
+  roles("ngo_admin", "super_admin"),
+  ctrl.deletePerformance
+);
 
 module.exports = router;
