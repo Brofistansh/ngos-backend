@@ -87,6 +87,7 @@ app.use("/api/activity-types", activityTypeRoutes);
 
 app.use("/api/activities", require("./routes/activities"));
 
+app.use("/api/analytics", require("./routes/studentAnalytics"));
 
 
 // ------------------------------
