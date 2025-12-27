@@ -89,6 +89,8 @@ app.use("/api/activities", require("./routes/activities"));
 
 app.use("/api/analytics", require("./routes/studentAnalytics"));
 
+app.use("/api/analytics", require("./routes/centerAnalytics"));
+
 
 // ------------------------------
 // SWAGGER DOCS
