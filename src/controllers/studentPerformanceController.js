@@ -1,3 +1,4 @@
+const { Op } = require("sequelize");
 const Student = require("../models/sequelize/Student");
 const StudentPerformanceReport = require("../models/sequelize/StudentPerformanceReport");
 const { calculateGrade } = require("../utils/gradeUtils");
@@ -157,8 +158,11 @@ exports.getCenterMonthly = async (req, res) => {
     const reports = await StudentPerformanceReport.findAll({
       where: {
         center_id: centerId,
-        test_date: { $between: [startDate, endDate] }
-      }
+        test_date: {
+          [Op.between]: [startDate, endDate]
+        }
+      },
+      order: [["test_date", "ASC"]]
     });
 
     res.json({
@@ -167,10 +171,11 @@ exports.getCenterMonthly = async (req, res) => {
     });
 
   } catch (err) {
-    console.error(err);
+    console.error("Monthly Report Error:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
 /* =========================================================
    GET SINGLE PERFORMANCE RECORD
