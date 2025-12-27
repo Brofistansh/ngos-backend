@@ -141,6 +141,7 @@ exports.getByRollNo = async (req, res) => {
 /* =========================================================
    GET CENTER MONTHLY REPORT
    GET /api/student-performance/monthly?centerId=..&month=..&year=..
+   ✅ ONLY CHANGE IS HERE
 ========================================================= */
 exports.getCenterMonthly = async (req, res) => {
   try {
@@ -165,9 +166,37 @@ exports.getCenterMonthly = async (req, res) => {
       order: [["test_date", "ASC"]]
     });
 
+    /* ===== STUDENT NAME ENRICHMENT ===== */
+
+    const studentIds = [...new Set(reports.map(r => r.student_id))];
+
+    const students = await Student.findAll({
+      where: { id: studentIds },
+      attributes: ["id", "roll_no", "first_name", "last_name"]
+    });
+
+    const studentMap = {};
+    students.forEach(s => {
+      studentMap[s.id] = s;
+    });
+
+    const enrichedReports = reports.map(r => {
+      const student = studentMap[r.student_id];
+
+      return {
+        ...r.toJSON(),
+        student_roll_no: student?.roll_no || null,
+        student_name: student
+          ? [student.first_name, student.last_name]
+              .filter(Boolean)
+              .join(" ")
+          : null
+      };
+    });
+
     res.json({
-      count: reports.length,
-      data: reports
+      count: enrichedReports.length,
+      data: enrichedReports
     });
 
   } catch (err) {
@@ -175,7 +204,6 @@ exports.getCenterMonthly = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
 
 /* =========================================================
    GET SINGLE PERFORMANCE RECORD
@@ -194,7 +222,9 @@ exports.getPerformanceById = async (req, res) => {
       ...report.toJSON(),
       student_roll_no: student?.roll_no || null,
       student_name: student
-        ? [student.first_name, student.last_name].filter(Boolean).join(" ")
+        ? [student.first_name, student.last_name]
+            .filter(Boolean)
+            .join(" ")
         : null
     });
 
