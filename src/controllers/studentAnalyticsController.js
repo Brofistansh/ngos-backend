@@ -3,6 +3,13 @@ const Student = require("../models/sequelize/Student");
 const StudentPerformanceReport = require("../models/sequelize/StudentPerformanceReport");
 const StudentAttendanceBulk = require("../models/sequelize/StudentAttendanceBulk");
 
+/* ================= UTIL ================= */
+const getTrendLabel = (diff) => {
+  if (diff > 1) return "improving";
+  if (diff < -1) return "declining";
+  return "stable";
+};
+
 exports.getStudentAnalytics = async (req, res) => {
   try {
     const { rollNo } = req.params;
@@ -23,9 +30,11 @@ exports.getStudentAnalytics = async (req, res) => {
     });
 
     let performance = null;
+    let performancePrediction = null;
 
     if (reports.length > 0) {
       const latest = reports[reports.length - 1];
+      const secondLast = reports[reports.length - 2];
 
       const labels = reports.map(r =>
         new Date(r.test_date).toLocaleString("default", { month: "short" })
@@ -52,6 +61,20 @@ exports.getStudentAnalytics = async (req, res) => {
         (_, i) => subjectAverages[i] === minAvg
       );
 
+      /* ---- PERFORMANCE PREDICTION ---- */
+      if (secondLast) {
+        const diff = latest.percentage - secondLast.percentage;
+        const predicted = Math.min(
+          100,
+          Math.max(0, Number((latest.percentage + diff).toFixed(1)))
+        );
+
+        performancePrediction = {
+          next_percentage: predicted,
+          trend: getTrendLabel(diff)
+        };
+      }
+
       performance = {
         current: {
           percentage: latest.percentage,
@@ -72,9 +95,7 @@ exports.getStudentAnalytics = async (req, res) => {
 
     /* ---------------- ATTENDANCE ---------------- */
     const attendanceRecords = await StudentAttendanceBulk.findAll({
-      where: {
-        center_id: student.center_id
-      },
+      where: { center_id: student.center_id },
       order: [["date", "ASC"]]
     });
 
@@ -91,25 +112,37 @@ exports.getStudentAnalytics = async (req, res) => {
 
       const month = new Date(day.date).toLocaleString("default", { month: "short" });
       monthMap[month] = monthMap[month] || { present: 0, total: 0 };
-
       monthMap[month].total++;
-      if (record.status === "present") {
-        monthMap[month].present++;
-      }
+      if (record.status === "present") monthMap[month].present++;
     });
 
-    const attendanceTrendLabels = Object.keys(monthMap);
-    const attendanceTrendValues = attendanceTrendLabels.map(m =>
+    const attendanceLabels = Object.keys(monthMap);
+    const attendanceValues = attendanceLabels.map(m =>
       Number(((monthMap[m].present / monthMap[m].total) * 100).toFixed(1))
     );
+
+    let attendancePrediction = null;
+    if (attendanceValues.length >= 2) {
+      const last = attendanceValues.at(-1);
+      const secondLast = attendanceValues.at(-2);
+      const diff = last - secondLast;
+
+      attendancePrediction = {
+        next_percentage: Math.min(
+          100,
+          Math.max(0, Number((last + diff).toFixed(1)))
+        ),
+        trend: getTrendLabel(diff)
+      };
+    }
 
     const attendance = {
       present_days: present,
       total_days: total,
       percentage: total > 0 ? Number(((present / total) * 100).toFixed(1)) : null,
       trend: {
-        labels: attendanceTrendLabels,
-        values: attendanceTrendValues
+        labels: attendanceLabels,
+        values: attendanceValues
       }
     };
 
@@ -121,8 +154,14 @@ exports.getStudentAnalytics = async (req, res) => {
         class: student.current_class,
         center_id: student.center_id
       },
+
       performance,
-      attendance
+      attendance,
+
+      prediction: {
+        performance: performancePrediction,
+        attendance: attendancePrediction
+      }
     });
 
   } catch (err) {
