@@ -1,5 +1,7 @@
 const StudentAttendanceBulk = require("../models/sequelize/StudentAttendanceBulk");
 const Center = require("../models/sequelize/Center");
+const Student = require("../models/sequelize/Student");
+
 
 exports.createBulkAttendance = async (req, res) => {
   try {
@@ -26,10 +28,37 @@ exports.createBulkAttendance = async (req, res) => {
       records: students
     });
 
-    res.status(201).json({
-      message: "Attendance marked successfully",
-      data: record
-    });
+    // extract roll_nos
+const rollNos = students.map(s => s.roll_no);
+
+// fetch student details
+const studentList = await Student.findAll({
+  where: { roll_no: rollNos },
+  attributes: ["roll_no", "name", "class", "level"]
+});
+
+// map for fast lookup
+const studentMap = {};
+studentList.forEach(s => {
+  studentMap[s.roll_no] = s;
+});
+
+// enrich records
+const enrichedRecords = record.records.map(r => ({
+  ...r,
+  name: studentMap[r.roll_no]?.name || null,
+  class: studentMap[r.roll_no]?.class || null,
+  level: studentMap[r.roll_no]?.level || null
+}));
+
+res.status(201).json({
+  message: "Attendance marked successfully",
+  data: {
+    ...record.toJSON(),
+    records: enrichedRecords
+  }
+});
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });
@@ -57,7 +86,45 @@ exports.getAttendance = async (req, res) => {
       );
     }
 
-    res.json({ count: data.length, data });
+    // collect all roll_nos from all records
+const rollNos = new Set();
+
+data.forEach(d => {
+  d.records.forEach(r => rollNos.add(r.roll_no));
+});
+
+// fetch students
+const students = await Student.findAll({
+  where: { roll_no: [...rollNos] },
+  attributes: ["roll_no", "name", "class", "level"]
+});
+
+// map
+const studentMap = {};
+students.forEach(s => {
+  studentMap[s.roll_no] = s;
+});
+
+// enrich data
+const enrichedData = data.map(d => {
+  const enrichedRecords = d.records.map(r => ({
+    ...r,
+    name: studentMap[r.roll_no]?.name || null,
+    class: studentMap[r.roll_no]?.class || null,
+    level: studentMap[r.roll_no]?.level || null
+  }));
+
+  return {
+    ...d.toJSON(),
+    records: enrichedRecords
+  };
+});
+
+res.json({
+  count: enrichedData.length,
+  data: enrichedData
+});
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });
